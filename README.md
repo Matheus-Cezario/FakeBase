@@ -1,11 +1,16 @@
 # FakeBase
 
 ## Comandos:
+
 * generate
+
     Gera os arquivos csv's
+    
 * server
+
     Inicia o servidor
 * start
+
     Gera os arquivos csv's e inicia o servidor
 
 ## Opições:
