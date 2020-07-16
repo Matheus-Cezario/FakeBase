@@ -1,0 +1,48 @@
+{
+  "Schematics": {
+    "user": {
+      "name": {
+        "method": "humanName",
+        "gender": "__genre"
+      },
+      "age": {
+        "method": "number",
+        "numberType": "int",
+        "start": 10,
+        "stop": 40
+      },
+      "genre": {
+        "method": "choice",
+        "data": ["male", "female"]
+      }
+    },
+    "product": {
+      "price": {
+        "method": "number",
+        "start": 10,
+        "stop": 90,
+        "precision": "__precision",
+        "transform": "currency"
+      },
+      "name": {
+        "method": "choice",
+        "data": "teste.txt"
+      },
+      "Due date": {
+        "method": "date",
+        "dateType": "future"
+      },
+      "precision": {
+        "method":"choice",
+        "data": [2,3,4]
+      }
+    }
+  },
+  "DataBase": {
+      "users":{
+        "schema":"user",
+        "count": 10
+      },
+      "products": "product"
+  }
+}
