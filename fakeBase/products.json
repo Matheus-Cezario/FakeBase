@@ -1,0 +1,25 @@
+{
+    "products": [
+        {
+            "precision": 3,
+            "price": "R$ 16.936",
+            "name": "Sorvete",
+            "Due date": "02/02/2028 12:43:30",
+            "_id": "9d6da5b96ec6e260"
+        },
+        {
+            "precision": 3,
+            "price": "R$ 50.801",
+            "name": "Feij\u00c3\u00a3o",
+            "Due date": "14/09/2020 15:05:24",
+            "_id": "8b6dab351b702a03"
+        },
+        {
+            "precision": 3,
+            "price": "R$ 66.245",
+            "name": "Batata",
+            "Due date": "18/02/2037 20:10:45",
+            "_id": "bdebb89aba36b671"
+        }
+    ]
+}

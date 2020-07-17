@@ -1,6 +1,6 @@
 import cherrypy
 import os
-import csv
+import json
 
 from context import Context
 from math import ceil
@@ -24,10 +24,10 @@ class Server(object):
     def getItem(self,key=None,**kwargs):
         if key not in self.list_databases():
             raise cherrypy.HTTPError(404,f'DataBase {key} not found.')
-        path = os.path.join(self.context.fakeBasePath,key+'.csv')
+        path = os.path.join(self.context.fakeBasePath,key+'.json')
         with open(path) as file:
-            csv_file = csv.DictReader(file)
-            for value in csv_file:
+            json_file: dict = json.load(file)
+            for value in json_file[key]:
                 if self.contais_equals(value,kwargs):
                     return {"value":value}
 
@@ -42,20 +42,20 @@ class Server(object):
         page = int(page)
         if key not in self.list_databases():
             raise cherrypy.HTTPError(404,f'DataBase {key} not found.')
-        path = os.path.join(self.context.fakeBasePath,key+'.csv')
+        path = os.path.join(self.context.fakeBasePath,key+'.json')
         with open(path) as file:
-            csv_file = csv.DictReader(file)
-            csv_list = []
-            for value in csv_file:
+            json_file: dict = json.load(file)
+            json_list = []
+            for value in json_file[key]:
                 if self.contais_equals(value,kwargs):
-                    csv_list.append(value)
+                    json_list.append(value)
         info = {}
-        count = len(csv_list)
+        count = len(json_list)
         if paginate:
-            csv_list = csv_list[pageCount*(page-1):pageCount*page]
+            json_list = json_list[pageCount*(page-1):pageCount*page]
             info = {"pageCount": pageCount, "page": page, "totalPages": ceil(count/pageCount)}
 
-        resp = {key:csv_list}
+        resp = {key:json_list}
         return {**resp,**info, "totalItens":count}
     
     def contais_equals(self,el: dict,condition: dict):

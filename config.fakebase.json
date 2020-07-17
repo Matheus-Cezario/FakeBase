@@ -26,7 +26,8 @@
       },
       "name": {
         "method": "choice",
-        "data": "teste.txt"
+        "data": "teste.txt",
+        "repeat": false
       },
       "Due date": {
         "method": "date",
@@ -43,6 +44,9 @@
         "schema":"user",
         "count": 10
       },
-      "products": "product"
+      "products": {
+        "schema": "product",
+        "count": 3
+      }
   }
 }

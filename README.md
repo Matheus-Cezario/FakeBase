@@ -2,11 +2,11 @@
 
 ## Comandos:
 * generate
-    Gera os arquivos csv's
+    Gera os arquivos JSON's
 * server
     Inicia o servidor
 * start
-    Gera os arquivos csv's e inicia o servidor
+    Gera os arquivos JSON's e inicia o servidor
 
 ## Opições:
 * --path
@@ -36,11 +36,11 @@ key: Nome do banco de dados que vai ser consultado
         * Caso contrário retorna apenas aqueles que tiveram os campos contidos em kwargs iguais.
 ### Exemplo
 >  http://localhost:8080/list/users
-* Retorna todos os itens do arquivo users.csv
+* Retorna todos os itens do arquivo users.json
 >  http://localhost:8080/list/users?gender=male
-* Retorna todos os itens do arquivo users.csv cujo campo gender seja igual a male
+* Retorna todos os itens do arquivo users.json cujo campo gender seja igual a male
 >  http://localhost:8080/list/users?paginate=true&pageCount=4&page=2
-* Retorna a segunda pagina com 4 itens dos itens do arquivo users.csv, retorna também o total de itens, total de páginas
+* Retorna a segunda pagina com 4 itens dos itens do arquivo users.json, retorna também o total de itens, total de páginas
 
 * get
 > Url: http://localhost:8080/get/\<key\>
@@ -54,9 +54,9 @@ key: Nome do banco de dados que vai ser consultado
         * Caso contrário retorna o primeiro que tiver os campos contidos em kwargs iguais.
 ### Exemplo
 >  http://localhost:8080/get/users
-* Retorna o primeiro item do arquivo users.csv
+* Retorna o primeiro item do arquivo users.json
 >  http://localhost:8080/get/users?gender=male
-* Retorna o primeiro item do arquivo users.csv cujo campo gender seja igual a male
+* Retorna o primeiro item do arquivo users.json cujo campo gender seja igual a male
 
 ## Como construir os Schematics
 Schematics são os padrões usados pra construir os bancos de dados.

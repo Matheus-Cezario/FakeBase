@@ -90,11 +90,16 @@ class randomValuesGenerator(valuesGenerator):
         for _ in range(size):
             resp += random.choice(values)
         return resp
-    def choice(self, data, **kwargs):
+
+    def choice(self, data, repeat=True):
         if isinstance(data, str):
             with open(data) as file:
                 data = file.readlines()
-        return random.choice([self.normalize_string(s) for s in data])
+        value = random.choice(data)
+        if not repeat:
+            data.remove(value)
+            return self.normalize_string(value), data, 'data'
+        return self.normalize_string(value)
     
     def normalize_string(self, text: str):
         if not isinstance(text,str):

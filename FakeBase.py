@@ -1,6 +1,5 @@
 import click
 import json
-import csv
 import os
 import random
 
@@ -12,7 +11,7 @@ from models.enums import ReservedWords
 from View.server import start_server
 
 @click.group()
-@click.option('--path', default='./fakebase.json')
+@click.option('--path', default='./config.fakebase.json')
 @click.option('--router', default=None)
 @click.option('--fakepath',default="./fakeBase")
 @click.pass_context
@@ -63,11 +62,9 @@ def generate_fake_database(context: Context):
         assert databaseParans['schema'] in context.schemas, f'Schema {databaseParans["schema"]} not exist'
         schematic = Schematic(**context.schemas[databaseParans['schema']])
         count = get_database_count(databaseParans)
-        with open(os.path.join(context.fakeBasePath,key+'.csv'), 'w',newline='') as file:
-            fieldnames = schematic.get_fieldnames()
-            csv_file = csv.DictWriter(file,fieldnames=fieldnames)
-            csv_file.writeheader()
-            csv_file.writerows([schematic.generate_values() for _ in range(count)])
+        with open(os.path.join(context.fakeBasePath,key+'.json'), 'w',newline='') as file:
+            value ={key:[schematic.generate_values() for _ in range(count)]}
+            json.dump(value,file,indent=4)
 
 def get_database_parans(dataBase: DataBaseValue):
     if isinstance(dataBase,str):
