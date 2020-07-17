@@ -1,11 +1,17 @@
 # FakeBase
 
 ## Comandos:
+
 * generate
+
     Gera os arquivos JSON's
+
 * server
+
     Inicia o servidor
+
 * start
+
     Gera os arquivos JSON's e inicia o servidor
 
 ## Opições:
@@ -23,7 +29,7 @@
 Lista os bancos de dados existentes
 
 * list
-> Url: http://localhost:8080/list/\<key\>
+> Url: http://localhost:8080/list/<key\>
 
 Lista os itens de um banco de dados
 key: Nome do banco de dados que vai ser consultado
@@ -43,7 +49,7 @@ key: Nome do banco de dados que vai ser consultado
 * Retorna a segunda pagina com 4 itens dos itens do arquivo users.json, retorna também o total de itens, total de páginas
 
 * get
-> Url: http://localhost:8080/get/\<key\>
+> Url: http://localhost:8080/get/<key\>
 
 Retorna um item do bando de dados
 
