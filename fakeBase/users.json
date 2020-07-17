@@ -1,94 +1,107 @@
 {
     "users": [
         {
-            "genre": "female",
-            "name": "Lucy Woodard",
+            "genre": "male",
+            "name": "David Green",
             "age": 27,
+            "card": [
+                "A\u00c3\u00a7ucar",
+                "Sal",
+                "Caf\u00c3\u00a9",
+                "Pimenta"
+            ],
+            "_id": "f7e8ba69afdcca91"
+        },
+        {
+            "genre": "male",
+            "name": "James Voss",
+            "age": 19,
+            "card": [
+                "Caf\u00c3\u00a9",
+                "Pimenta"
+            ],
+            "_id": "b614d811a9193c5c"
+        },
+        {
+            "genre": "female",
+            "name": "Sherry Beeson",
+            "age": 15,
+            "card": [
+                "Sal",
+                "Pimenta"
+            ],
+            "_id": "0a226d862aca2579"
+        },
+        {
+            "genre": "male",
+            "name": "Harry Wilson",
+            "age": 12,
+            "card": [
+                "Caf\u00c3\u00a9",
+                "Pimenta",
+                "Sal",
+                "A\u00c3\u00a7ucar"
+            ],
+            "_id": "a703a30231c8caf3"
+        },
+        {
+            "genre": "female",
+            "name": "Cynthia Gomez",
+            "age": 26,
+            "card": [
+                "Sal"
+            ],
+            "_id": "b33994613f0c624e"
+        },
+        {
+            "genre": "female",
+            "name": "Gabriela Reimer",
+            "age": 19,
             "card": [
                 "A\u00c3\u00a7ucar",
                 "Sal"
             ],
-            "_id": "6fec37622502731b"
-        },
-        {
-            "genre": "female",
-            "name": "Dorothy Brown",
-            "age": 21,
-            "card": [],
-            "_id": "9cd5dd0e5f789b42"
+            "_id": "0e298e4c6fda3178"
         },
         {
             "genre": "male",
-            "name": "Walter Kindred",
-            "age": 33,
-            "card": [],
-            "_id": "0a0a8505671d2d31"
-        },
-        {
-            "genre": "male",
-            "name": "Ronald Hubbard",
-            "age": 14,
-            "card": [],
-            "_id": "45557782bc71522b"
-        },
-        {
-            "genre": "female",
-            "name": "Helen Wood",
-            "age": 14,
-            "card": [
-                "Caf\u00c3\u00a9",
-                "Pimenta"
-            ],
-            "_id": "8e7927b4c75128ef"
-        },
-        {
-            "genre": "female",
-            "name": "Barbara Adams",
-            "age": 20,
+            "name": "Phillip James",
+            "age": 36,
             "card": [
                 "A\u00c3\u00a7ucar",
                 "Sal",
                 "Caf\u00c3\u00a9",
                 "Pimenta"
             ],
-            "_id": "8d8020d98d723801"
+            "_id": "9d962efb15c8657e"
         },
         {
             "genre": "female",
-            "name": "Jeanne Baker",
-            "age": 31,
-            "card": [
-                "A\u00c3\u00a7ucar",
-                "Pimenta"
-            ],
-            "_id": "57a84c4c33371deb"
-        },
-        {
-            "genre": "male",
-            "name": "David Martinez",
-            "age": 24,
+            "name": "Julie Murphy",
+            "age": 29,
             "card": [],
-            "_id": "27bc5821600a7ebc"
-        },
-        {
-            "genre": "male",
-            "name": "Willie Weimer",
-            "age": 24,
-            "card": [
-                "Pimenta"
-            ],
-            "_id": "a562c249b83fe42c"
+            "_id": "8ad5a3447971677d"
         },
         {
             "genre": "female",
-            "name": "Christine Arnold",
-            "age": 13,
+            "name": "Jacqueline Whitley",
+            "age": 15,
             "card": [
-                "Sal",
+                "Pimenta",
                 "A\u00c3\u00a7ucar",
+                "Sal"
+            ],
+            "_id": "c9b3f67e8862f815"
+        },
+        {
+            "genre": "male",
+            "name": "Benjamin Hampton",
+            "age": 25,
+            "card": [
+                "Pimenta",
                 "Caf\u00c3\u00a9"
             ],
-            "_id": "d494f373ec271e8a"
+            "_id": "e195f44009eadcb2"
         }
     ]
 }

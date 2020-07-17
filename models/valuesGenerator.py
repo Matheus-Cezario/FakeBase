@@ -4,6 +4,7 @@ import re
 import time
 from datetime import datetime,timedelta
 from utils.decorators import preprocessingParamenters
+from typing import Union
 class valuesGenerator:
     def __init__(self):
         self.methodsName =  [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("__")]
@@ -98,7 +99,8 @@ class randomValuesGenerator(valuesGenerator):
             resp += random.choice(values)
         return resp
 
-    def choice(self, data, repeat=True,):
+    @preprocessingParamenters
+    def choice(self, data: Union[str,list], repeat: bool = True):
         if isinstance(data, str):
             with open(data) as file:
                 data = file.readlines()
@@ -107,9 +109,9 @@ class randomValuesGenerator(valuesGenerator):
             data.remove(value)
             return self.normalize_string(value), data, 'data'
         return self.normalize_string(value)
-    
-    def chooseSeveral(self,data,repeat=True, minValue=0):
-        data = data.copy()
+
+    @preprocessingParamenters    
+    def chooseSeveral(self,data: Union[str,list],repeat:bool = True, minValue: int = 0):
         if isinstance(data, str):
             with open(data) as file:
                 data = file.readlines()
