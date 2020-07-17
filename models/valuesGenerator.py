@@ -3,7 +3,7 @@ import names
 import re
 import time
 from datetime import datetime,timedelta
-
+from utils.decorators import preprocessingParamenters
 class valuesGenerator:
     def __init__(self):
         self.methodsName =  [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("__")]
@@ -23,7 +23,8 @@ class humanValuesGenerator(valuesGenerator):
     def __init__(self):
         super().__init__()
     
-    def humanName(self, gender=None,valueFormat=None):
+    @preprocessingParamenters
+    def humanName(self, gender:str=None, valueFormat: list=None):
         if not valueFormat:
             return names.get_full_name(gender)
         name = ''
@@ -31,12 +32,14 @@ class humanValuesGenerator(valuesGenerator):
             name += self.get_name_by_position(position, gender) + ' '
         name = name[:-1]
         return name
+
     def get_name_by_position(self, position, gender=None):
         if position == 'first':
             return names.get_first_name(gender)
         return names.get_last_name()
 
-    def date(self,valueFormat = "%d/%m/%Y %H:%M:%S",dateType = "all", dataRange=20):
+    @preprocessingParamenters
+    def date(self,valueFormat: str = "%d/%m/%Y %H:%M:%S",dateType: str = "all", dataRange: int = 20):
         present = datetime.now()
         future = datetime.strptime(f'31/12/{present.year + dataRange} 00:00:00', '%d/%m/%Y %H:%M:%S')
         past = datetime.strptime(f'01/01/{present.year - dataRange} 00:00:00', '%d/%m/%Y %H:%M:%S')
@@ -64,26 +67,30 @@ class numberValuesGenerator(valuesGenerator):
     def __init__(self):
         super().__init__()
     
-    def number(self,start=-1000,stop=1000,numberType='float',precision=10):
+    @preprocessingParamenters
+    def number(self,start: float =-1000.0,stop:float =1000.0,numberType: str ='float',precision: int=10):
         resp = (random.random() * (stop-start)) + start
         if numberType == 'float':
-            return round(resp,int(precision))
+            return round(resp,precision)
         return int(resp)
 
 class randomValuesGenerator(valuesGenerator):
     def __init__(self):
         super().__init__()
-    
-    def randID(self, IDType='hex',size=16):
+
+    @preprocessingParamenters
+    def randID(self, IDType: str='hex',size: int=16):
         if IDType == 'hex':
             return self.randHex(size)
         return self.randDec(size)
+
     def randHex(self,size):
         values = "abcdef0123456789"
         resp = ''
         for _ in range(size):
             resp += random.choice(values)
         return resp
+
     def randDec(self,size):
         values = "0123456789"
         resp = ''
@@ -91,7 +98,7 @@ class randomValuesGenerator(valuesGenerator):
             resp += random.choice(values)
         return resp
 
-    def choice(self, data, repeat=True):
+    def choice(self, data, repeat=True,):
         if isinstance(data, str):
             with open(data) as file:
                 data = file.readlines()
@@ -101,6 +108,20 @@ class randomValuesGenerator(valuesGenerator):
             return self.normalize_string(value), data, 'data'
         return self.normalize_string(value)
     
+    def chooseSeveral(self,data,repeat=True, minValue=0):
+        data = data.copy()
+        if isinstance(data, str):
+            with open(data) as file:
+                data = file.readlines()
+        count = random.randint(minValue, len(data))
+        resp = []
+        for _ in range(count):
+            value = random.choice(data)
+            if not repeat:
+                data.remove(value)
+            resp.append(value)
+        return resp
+
     def normalize_string(self, text: str):
         if not isinstance(text,str):
             return text

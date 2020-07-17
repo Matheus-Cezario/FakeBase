@@ -62,7 +62,7 @@ def generate_fake_database(context: Context):
         assert databaseParans['schema'] in context.schemas, f'Schema {databaseParans["schema"]} not exist'
         schematic = Schematic(**context.schemas[databaseParans['schema']])
         count = get_database_count(databaseParans)
-        with open(os.path.join(context.fakeBasePath,key+'.json'), 'w',newline='') as file:
+        with open(os.path.join(context.fakeBasePath,key+'.json'), 'w',newline='', encoding="utf-8") as file:
             value ={key:[schematic.generate_values() for _ in range(count)]}
             json.dump(value,file,indent=4)
 

@@ -8,12 +8,17 @@
       "age": {
         "method": "number",
         "numberType": "int",
-        "start": 10,
+        "start": "10",
         "stop": 40
       },
       "genre": {
         "method": "choice",
         "data": ["male", "female"]
+      },
+      "card": {
+        "method": "chooseSeveral",
+        "data": ["Café", "Açucar", "Sal","Pimenta"],
+        "repeat": false
       }
     },
     "product": {

@@ -1,25 +1,25 @@
 {
     "products": [
         {
-            "precision": 3,
-            "price": "R$ 16.936",
-            "name": "Sorvete",
-            "Due date": "02/02/2028 12:43:30",
-            "_id": "9d6da5b96ec6e260"
-        },
-        {
-            "precision": 3,
-            "price": "R$ 50.801",
-            "name": "Feij\u00c3\u00a3o",
-            "Due date": "14/09/2020 15:05:24",
-            "_id": "8b6dab351b702a03"
-        },
-        {
-            "precision": 3,
-            "price": "R$ 66.245",
+            "precision": 2,
+            "price": "R$ 28.69",
             "name": "Batata",
-            "Due date": "18/02/2037 20:10:45",
-            "_id": "bdebb89aba36b671"
+            "Due date": "28/11/2033 05:36:46",
+            "_id": "b6634d28d570ecb3"
+        },
+        {
+            "precision": 4,
+            "price": "R$ 86.2802",
+            "name": "Sorvete",
+            "Due date": "12/06/2030 05:53:27",
+            "_id": "8b77d48a0cba4f63"
+        },
+        {
+            "precision": 4,
+            "price": "R$ 81.6416",
+            "name": "Feij\u00c3\u00a3o",
+            "Due date": "20/07/2038 17:17:44",
+            "_id": "7d9f734f70795377"
         }
     ]
 }

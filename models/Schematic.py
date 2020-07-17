@@ -58,6 +58,7 @@ class Schematic:
         str_schema = str_schema.replace(variable,str(self.values[dependency]))
         str_schema = str_schema.replace("'",'"')
         return json.loads(str_schema)
+        
     def get_dependencyes(self,values: SchemaValue) -> list:
         dependencyes = []
         if isinstance(values,str):
