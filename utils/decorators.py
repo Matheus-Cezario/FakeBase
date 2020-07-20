@@ -16,7 +16,6 @@ def preprocessingParamenters(func):
             raise TypeError(f'Impossible to convert value {value} to {toType} in method {func.__name__}')
     
     def validValueType(value, Type):
-        print(Type)
         if value == None:
             return True
         types = getattr(Type,'__args__',None)

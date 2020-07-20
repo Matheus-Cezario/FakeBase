@@ -8,6 +8,7 @@ from customTypes import Schemas, DataBaseValue
 from controllers.generatorFields import generatorFields
 from models.Schematic import Schematic
 from models.enums import ReservedWords
+from models.DataBase import Database
 from View.server import start_server
 
 @click.group()
@@ -58,24 +59,13 @@ def generate_fake_database(context: Context):
     if not os.path.isdir(context.fakeBasePath):
         os.mkdir(context.fakeBasePath)
     for key, value in zip(context.dataBase.keys(),context.dataBase.values()):
-        databaseParans: dict = get_database_parans(value)
-        assert databaseParans['schema'] in context.schemas, f'Schema {databaseParans["schema"]} not exist'
-        schematic = Schematic(**context.schemas[databaseParans['schema']])
-        count = get_database_count(databaseParans)
+        dataBase = Database(key,value)
+        assert dataBase.value['schema'] in context.schemas, f'Schema {databaseParans["schema"]} not exist'
+        dataBase.schematic = Schematic(**context.schemas[dataBase.value['schema']])
         with open(os.path.join(context.fakeBasePath,key+'.json'), 'w',newline='', encoding="utf-8") as file:
-            value ={key:[schematic.generate_values() for _ in range(count)]}
+            value = dataBase.generate_values()
             json.dump(value,file,indent=4)
 
-def get_database_parans(dataBase: DataBaseValue):
-    if isinstance(dataBase,str):
-        return {'schema': dataBase}
-    assert 'schema' in dataBase, 'Erros! schema not specified'
-    return dataBase
-
-def get_database_count(databaseParans: dict) -> int:
-    if 'count' in databaseParans:
-        return databaseParans['count']
-    return random.randint(10,50)
 
 if __name__ == '__main__':
     fb()

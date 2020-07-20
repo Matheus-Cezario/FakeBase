@@ -12,6 +12,13 @@ class generatorFields:
         self.pipes = Pipes()
         self.initializer_variables()
 
+    def get_size_restriction(self,method: str):
+        if method not in self.methodsMap.keys():
+            return None
+        variableName = self.methodsMap[method]
+        variable: valuesGenerator = self[variableName]
+        return variable.size_restriction
+
     def initializer_variables(self):
         variables = self.__dict__
         methodsMap = {}
@@ -22,7 +29,7 @@ class generatorFields:
                 methodsMap.update(mapValues)
         self.methodsMap = methodsMap
 
-    def generete(self, method, **kwargs):
+    def generate(self, method, **kwargs):
         # assert method in self.methodsMap.keys(), f'Method {method} not exist'
         if method not in self.methodsMap.keys():
             return method

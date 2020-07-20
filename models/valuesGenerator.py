@@ -4,11 +4,13 @@ import re
 import time
 from datetime import datetime,timedelta
 from utils.decorators import preprocessingParamenters
-from typing import Union
+from typing import Union, List
+
 class valuesGenerator:
     def __init__(self):
         self.methodsName =  [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("__")]
-    
+        self.size_restriction: List[dict] = None
+
     def call_function(self, method: str, **kwargs) -> str:
         if method not in self.methodsName:
             return method
@@ -78,6 +80,13 @@ class numberValuesGenerator(valuesGenerator):
 class randomValuesGenerator(valuesGenerator):
     def __init__(self):
         super().__init__()
+        self.size_restriction = [
+            {
+                'method':'choice',
+                'if': 'repeat == False',
+                'limit_len':'data'
+            }
+        ]
 
     @preprocessingParamenters
     def randID(self, IDType: str='hex',size: int=16):
@@ -111,11 +120,13 @@ class randomValuesGenerator(valuesGenerator):
         return self.normalize_string(value)
 
     @preprocessingParamenters    
-    def chooseSeveral(self,data: Union[str,list],repeat:bool = True, minValue: int = 0):
+    def chooseSeveral(self,data: Union[str,list],repeat:bool = True, minValue: int = 0, maxValue: int = None):
         if isinstance(data, str):
             with open(data) as file:
                 data = file.readlines()
-        count = random.randint(minValue, len(data))
+        if not maxValue:
+            maxValue = len(data)
+        count = random.randint(minValue, maxValue)
         resp = []
         for _ in range(count):
             value = random.choice(data)

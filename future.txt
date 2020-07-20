@@ -1,0 +1,4 @@
+dataBase ref,campo(s),modo de captura,condições
+@products:_id:all:name='Batata'
+@products:[_id,name]:first:precision=2
+@products:[precision,name]:random:None:count=[5,7]

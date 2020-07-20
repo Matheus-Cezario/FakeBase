@@ -16,7 +16,7 @@
 
 ## Opições:
 * --path
-    Caminho para o arquivo de configuração, padrão `./fakebase.json`
+    Caminho para o arquivo de configuração, padrão `./config.fakebase.json`
 * --fakepath
     Caminho para a pasta onde os arquivos vão ser gerados, padrão `./fakebase`
 
@@ -95,7 +95,7 @@ O *DataBase* deve ser descrito no mesmo arquivo que o *Schematics*, no campo *Da
   "DataBase": {
       "users":{
         "schema":"user",
-        "count": 10
+        "size": 10
       },
       "products": "product"
   }
@@ -157,6 +157,17 @@ Assim estará usando as configurações padrão do gerador, para alterar essas c
     * parâmetros
         * data: Pode ser uma lista com os valores ou uma *string* com o caminho para um arquivo com os valores, cada um em uma linha
             * Observação: *data* é um parâmetro obrigatório
+        * repeat: Indica se os valores podem se repedir, padrão `True`
+            * Observação: Caso o *repeat* seja `False` o `size` do *DataBase* que usar esse *schema* não for definido, ele será limitado pelo tamanho de *data*
+* chooseSeveral
+    * Escolhe um número aleatório de valores de uma lista
+    * parâmetros
+        * data: Pode ser uma lista com os valores ou uma *string* com o caminho para um arquivo com os valores, cada um em uma linha
+            * Observação: *data* é um parâmetro obrigatório
+        * repeat: Indica se os valores podem se repedir, padrão `True`
+        * minValue: Número minímo de valores que podem ser escolhidos, padrão 0
+        * maxValue: Número máximo de valores que podem ser escolhidos, padrão `len(data)`
+
 
 ## Ligação entre campos
 Um campo de um *schematic* pode referênciar outro campo desse mesmos *schematic* usando o padrão `__nomeDoCampo`

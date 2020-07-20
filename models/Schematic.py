@@ -27,7 +27,7 @@ class Schematic:
             return
         kwargs = self.resolver_dependencyes(**kwargs)
         genarator = generatorFields()
-        resp = genarator.generete(**kwargs)
+        resp = genarator.generate(**kwargs)
         if isinstance(resp, tuple):
             self.values[key] = resp[0]
             self.schema[key][resp[2]] = resp[1]

@@ -47,11 +47,8 @@
   "DataBase": {
       "users":{
         "schema":"user",
-        "count": 10
+        "size": 10
       },
-      "products": {
-        "schema": "product",
-        "count": 3
-      }
+      "products":  "product"
   }
 }
