@@ -31,6 +31,8 @@ class generatorFields:
 
     def generate(self, method, **kwargs):
         # assert method in self.methodsMap.keys(), f'Method {method} not exist'
+        if not isinstance(method,str):
+            return method
         if method not in self.methodsMap.keys():
             return method
         transformMethod = None

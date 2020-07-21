@@ -1,13 +1,15 @@
 from customTypes import Schemas, SchemaValue
 from controllers.generatorFields import generatorFields
+from utils.functions import str_schema_replace
 import json
 import collections
+
 
 class Schematic:
 
     def __init__(self,**kwargs):
         super().__init__()
-        self.schema = kwargs
+        self.schema: dict = kwargs
         self.values = {}
     
     def get_fieldnames(self) -> list:
@@ -55,9 +57,11 @@ class Schematic:
     def update_dependency(self, dependency, schema):
         variable = "__"+dependency
         str_schema = str(schema)
-        str_schema = str_schema.replace(variable,str(self.values[dependency]))
-        str_schema = str_schema.replace("'",'"')
+        str_schema = str_schema_replace(str_schema,variable,self.values[dependency])
+
         return json.loads(str_schema)
+    
+
         
     def get_dependencyes(self,values: SchemaValue) -> list:
         dependencyes = []

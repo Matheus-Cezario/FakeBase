@@ -166,7 +166,7 @@ Assim estará usando as configurações padrão do gerador, para alterar essas c
             * Observação: *data* é um parâmetro obrigatório
         * repeat: Indica se os valores podem se repedir, padrão `True`
         * minValue: Número minímo de valores que podem ser escolhidos, padrão 0
-        * maxValue: Número máximo de valores que podem ser escolhidos, padrão `len(data)`
+        * maxValue: Número máximo de valores que podem ser escolhidos, padrão `len(data())`
 
 
 ## Ligação entre campos

@@ -4,8 +4,9 @@ import os
 import random
 
 from context import Context
-from customTypes import Schemas, DataBaseValue
-from controllers.generatorFields import generatorFields
+from customTypes import Schemas
+
+from controllers.dataBaseManager import DataBaseManager
 from models.Schematic import Schematic
 from models.enums import ReservedWords
 from models.DataBase import Database
@@ -58,13 +59,11 @@ def preprossing_schema(schema: Schemas):
 def generate_fake_database(context: Context):
     if not os.path.isdir(context.fakeBasePath):
         os.mkdir(context.fakeBasePath)
-    for key, value in zip(context.dataBase.keys(),context.dataBase.values()):
-        dataBase = Database(key,value)
-        assert dataBase.value['schema'] in context.schemas, f'Schema {databaseParans["schema"]} not exist'
-        dataBase.schematic = Schematic(**context.schemas[dataBase.value['schema']])
+    dataBaseManager = DataBaseManager(context.dataBase,context.schemas)
+    resp = dataBaseManager.generate_all_databases()
+    for key, value in zip(resp.keys(),resp.values()):
         with open(os.path.join(context.fakeBasePath,key+'.json'), 'w',newline='', encoding="utf-8") as file:
-            value = dataBase.generate_values()
-            json.dump(value,file,indent=4)
+            json.dump({key:value},file,indent=4)
 
 
 if __name__ == '__main__':

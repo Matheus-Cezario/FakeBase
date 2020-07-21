@@ -17,7 +17,7 @@
       },
       "card": {
         "method": "chooseSeveral",
-        "data": ["Café", "Açucar", "Sal","Pimenta"],
+        "data": "@products:None:precision>2:all@",
         "repeat": false
       }
     },

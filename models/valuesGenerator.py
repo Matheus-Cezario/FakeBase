@@ -118,7 +118,6 @@ class randomValuesGenerator(valuesGenerator):
             data.remove(value)
             return self.normalize_string(value), data, 'data'
         return self.normalize_string(value)
-
     @preprocessingParamenters    
     def chooseSeveral(self,data: Union[str,list],repeat:bool = True, minValue: int = 0, maxValue: int = None):
         if isinstance(data, str):

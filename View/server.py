@@ -29,9 +29,9 @@ class Server(object):
             json_file: dict = json.load(file)
             for value in json_file[key]:
                 if self.contais_equals(value,kwargs):
-                    return {"value":value}
+                    return value
 
-        return {"value":None}
+        return {}
         
 
     @cherrypy.expose(['list'])
@@ -55,7 +55,7 @@ class Server(object):
             json_list = json_list[pageCount*(page-1):pageCount*page]
             info = {"pageCount": pageCount, "page": page, "totalPages": ceil(count/pageCount)}
 
-        resp = {key:json_list}
+        resp = {'value':json_list}
         return {**resp,**info, "totalItens":count}
     
     def contais_equals(self,el: dict,condition: dict):
