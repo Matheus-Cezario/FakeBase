@@ -2,21 +2,23 @@
 from customTypes import Schemas, DataBase as DataBaseType
 from models.DataBase import Database 
 from models.Schematic import Schematic
+from context import Context
 from typing import List, Union
 from utils.functions import find, str_schema_replace, strToList
-from re import Pattern
 
 import re
 import json
 import random
+import os
 
 class DataBaseManager:
     
-    def __init__(self, dataBase: DataBaseType, schemas: Schemas):
+    def __init__(self, context: Context):
         super().__init__()
-        self.dataBase = dataBase
-        self.schemas = schemas
-        self.dependency: Pattern = re.compile(r'@?(.*?)[:|@]')
+        self.dataBase: DataBaseType = context.dataBase
+        self.schemas: Schemas = context.schemas
+        self.context = context
+        self.dependency = re.compile(r'@?(.*?)[:|@]')
         self._generate_database_list()
     
     def _generate_database_list(self):
@@ -174,6 +176,107 @@ class DataBaseManager:
                 dependencies.extend(self._match_dependency(item))
         
         return dependencies
+
+    def list_databases(self):
+        return self.dataBase.keys()
+
+    def list_database(self,key,**kwargs):
+        if key not in self.list_databases():
+            return (404,f'DataBase {key} not found.')
+        path = os.path.join(self.context.fakeBasePath,key+'.json')
+        with open(path) as file:
+            json_file: dict = json.load(file)
+            json_list = []
+            for value in json_file[key]:
+                if len(kwargs) == 0 or self.contais_equals(value,kwargs):
+                    json_list.append(value)
+        return json_list
+    
+    def getItem(self,key,**kwargs):
+        if key not in self.list_databases():
+            return (404,f'DataBase {key} not found.')
+        path = os.path.join(self.context.fakeBasePath,key+'.json')
+        with open(path) as file:
+            json_file: dict = json.load(file)
+            for value in json_file[key]:
+                if  len(kwargs) == 0 or self.contais_equals(value,kwargs):
+                    return value
+        return {}
+
+    def contais_equals(self,el: dict,condition: dict):
+        if len(condition) == 0:
+            return False
+        for key in condition.keys():
+            if key not in el or not self.equals(el[key], condition[key]):
+                return False
+        return True
+    
+    def equals(self,one,two):
+        if type(one) == type(two):
+            return one == two
+        try:
+            two = type(one)(two)
+            return one == two
+        except:
+            return False
+    
+    def deleteItem(self,key,every,**kwargs):
+        if key not in self.list_databases():
+            return (404,f'DataBase {key} not found.')
+        if len(kwargs) == 0:
+            return (400,'Item not found')
+        path = os.path.join(self.context.fakeBasePath,key+'.json')
+        resp = []
+        with open(path) as file:
+            json_file: dict = json.load(file)
+            for value in json_file[key]:
+                if self.contais_equals(value,kwargs):
+                    json_file[key].remove(value)
+                    resp.append(value)
+                    if not every:
+                        break
+        with open(path,'w') as file:
+            json.dump(json_file,file,indent=4)
+        return resp
+    
+    def updateItem(self,key,newValue,every,**kwargs):
+        if key not in self.list_databases():
+            return (404,f'DataBase {key} not found.')
+        if len(kwargs) == 0:
+            return (400,'Item not found')
+        path = os.path.join(self.context.fakeBasePath,key+'.json')
+        resp = []
+        with open(path) as file:
+            json_file: dict = json.load(file)
+            for index, value in enumerate(json_file[key]):
+                if self.contais_equals(value,kwargs):
+                    r = {**value,**newValue}
+                    json_file[key][index] = r
+                    resp.append(r)
+                    if not every:
+                        break
+        with open(path,'w') as file:
+            json.dump(json_file,file,indent=4)
+        return resp
+
+    def setItem(self,key,newValue,every,**kwargs):
+        if key not in self.list_databases():
+            return (404,f'DataBase {key} not found.')
+        if len(kwargs) == 0:
+            return (400,'Item not found')
+        path = os.path.join(self.context.fakeBasePath,key+'.json')
+        resp = {}
+        with open(path) as file:
+            json_file: dict = json.load(file)
+            for index, value in enumerate(json_file[key]):
+                if self.contais_equals(value,kwargs):
+                    resp = newValue
+                    json_file[key][index] = resp
+                    if not every:
+                        break
+        with open(path,'w') as file:
+            json.dump(json_file,file,indent=4)
+        return resp
 
         
       

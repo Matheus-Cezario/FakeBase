@@ -1,4 +1,4 @@
-from models.valuesGenerator import humanValuesGenerator, valuesGenerator, numberValuesGenerator, randomValuesGenerator
+from models.valuesGenerator import humanValuesGenerator, valuesGenerator, numberValuesGenerator, randomValuesGenerator,Sequential
 from controllers.pipes import Pipes
 from models.enums import ReservedWords
 
@@ -9,6 +9,7 @@ class generatorFields:
         self.humanValues = humanValuesGenerator()
         self.numberValues = numberValuesGenerator()
         self.randomValues = randomValuesGenerator()
+        self.sequential = Sequential()
         self.pipes = Pipes()
         self.initializer_variables()
 

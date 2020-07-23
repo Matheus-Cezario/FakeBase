@@ -6,10 +6,13 @@
         "gender": "__genre"
       },
       "age": {
-        "method": "number",
-        "numberType": "int",
-        "start": "10",
-        "stop": 40
+        "method": "sequence",
+        "data":[1,2,3]
+      },
+      "randomSequence": {
+        "method": "randomSequence",
+        "data":[1,2,3,4,5,6,7,8],
+        "size":4
       },
       "genre": {
         "method": "choice",

@@ -16,4 +16,6 @@ class moneyPipe(transform):
         super().__init__()
     
     def currency(self, value,**kwargs):
+        if isinstance(value,tuple):
+            return 'R$ ' + str(value[0]), value[1],value[2]
         return 'R$ ' + str(value)

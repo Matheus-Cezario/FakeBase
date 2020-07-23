@@ -25,13 +25,13 @@ def fb(ctx, path, router, fakepath):
 @fb.command()
 @click.pass_obj
 def start(context: Context):
-    generate_fake_database(context)
-    start_server(context)
+    dataBaseManager = generate_fake_database(context)
+    start_server(dataBaseManager)
 
 @fb.command()
 @click.pass_obj
 def server(context: Context):
-    start_server(context)
+    start_server(DataBaseManager(context))
 
 @fb.command()
 @click.pass_obj
@@ -59,11 +59,12 @@ def preprossing_schema(schema: Schemas):
 def generate_fake_database(context: Context):
     if not os.path.isdir(context.fakeBasePath):
         os.mkdir(context.fakeBasePath)
-    dataBaseManager = DataBaseManager(context.dataBase,context.schemas)
+    dataBaseManager = DataBaseManager(context)
     resp = dataBaseManager.generate_all_databases()
     for key, value in zip(resp.keys(),resp.values()):
         with open(os.path.join(context.fakeBasePath,key+'.json'), 'w',newline='', encoding="utf-8") as file:
             json.dump({key:value},file,indent=4)
+    return dataBaseManager
 
 
 if __name__ == '__main__':

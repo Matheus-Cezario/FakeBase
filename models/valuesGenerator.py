@@ -3,8 +3,9 @@ import names
 import re
 import time
 from datetime import datetime,timedelta
-from utils.decorators import preprocessingParamenters
+from utils.decorators import preprocessingParamenters, countCall
 from typing import Union, List
+from math import ceil
 
 class valuesGenerator:
     def __init__(self):
@@ -140,3 +141,47 @@ class randomValuesGenerator(valuesGenerator):
         text = text.replace('\n','')
         text = re.sub(r'\s+',' ',text)
         return text
+
+class Sequential(valuesGenerator):
+    def __init__(self):
+        super().__init__()
+        self.sequenceStore = None
+        self.index = 0
+        self.size_restriction = [
+            {
+                'method':'sequence',
+                'if': 'repeat == False',
+                'limit_len':'data'
+            }
+        ]
+
+    @countCall
+    @preprocessingParamenters
+    def sequence(self, data: Union[str,list],count:int = 0,repeat:bool = True):
+        if isinstance(data, str):
+            with open(data) as file:
+                data = file.readlines()
+        if len(data) <= count and repeat:
+            size = len(data)
+            p = int(count/size)
+            count = count - p*size
+        item = data[count]
+        return item
+
+    @preprocessingParamenters
+    def numericSequence(self,start:int=0,stop:int=10,step:int=1):
+        return list(range(start,stop,step))
+    
+    @preprocessingParamenters
+    def randomSequence(self,data:Union[str,list],size:int=None):
+        if isinstance(data, str):
+            with open(data) as file:
+                data = file.readlines()
+        if not size:
+            size = int(len(data)/3)
+        start = random.randint(0,len(data))
+        stop = start+size
+        if stop > len(data):
+            start -= stop-len(data)
+            stop = len(data)
+        return data[start:stop]

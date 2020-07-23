@@ -21,18 +21,21 @@ class Database:
 
     def generate_values(self):
         assert self.schematic is not None, 'Schematic is None'
+        print('size',self.size)
         return [self.schematic.generate_values() for _ in range(self.size)]
 
     @property
     def size(self):
-        if 'size' in self.value:
-            return self.value['size']
+        if 'realSize' in self.value:
+            return self.value['realSize']
         size_restriction = self.get_size_restriction()
-        if size_restriction is None:
-            self.value['size'] = random.randint(10,50)
-        else:
-            self.value['size'] = size_restriction
-        return self.value['size']
+        if size_restriction is None and 'size' not in self.value:
+            self.value['realSize'] = random.randint(10,50)
+        elif (size_restriction and 'size' in self.value and int(self.value['size']) > size_restriction) or 'size' not in self.value:
+            self.value['realSize'] = size_restriction
+        elif 'size' in self.value:
+            self.value['realSize'] = self.value['size']
+        return self.value['realSize']
         
     def get_size_restriction(self):
         generator = generatorFields()

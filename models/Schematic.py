@@ -9,6 +9,7 @@ class Schematic:
 
     def __init__(self,**kwargs):
         super().__init__()
+        self.genarator = generatorFields()
         self.schema: dict = kwargs
         self.values = {}
     
@@ -28,8 +29,7 @@ class Schematic:
         if key in self.values:
             return
         kwargs = self.resolver_dependencyes(**kwargs)
-        genarator = generatorFields()
-        resp = genarator.generate(**kwargs)
+        resp = self.genarator.generate(**kwargs)
         if isinstance(resp, tuple):
             self.values[key] = resp[0]
             self.schema[key][resp[2]] = resp[1]

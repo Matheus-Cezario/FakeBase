@@ -2,53 +2,73 @@ import cherrypy
 import os
 import json
 
-from context import Context
+
+from controllers.dataBaseManager import DataBaseManager
 from math import ceil
+from utils.decorators import preprocessingParamenters
 
 # print(cherrypy.request.method)
 class Server(object):
-    def __init__(self, context: Context):
+    def __init__(self, dataBaseManager: DataBaseManager):
         super().__init__()
-        self.context = context
+        self.dataBaseManager = dataBaseManager
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def index(self):  
-        return {"dataBase":list(self.list_databases())}
-    
-    def list_databases(self):
-        return self.context.dataBase.keys()
+        return {"dataBase":list(self.dataBaseManager.list_databases())}
     
     @cherrypy.expose(['get'])
     @cherrypy.tools.json_out()
     @cherrypy.popargs('key')
     def getItem(self,key=None,**kwargs):
-        if key not in self.list_databases():
-            raise cherrypy.HTTPError(404,f'DataBase {key} not found.')
-        path = os.path.join(self.context.fakeBasePath,key+'.json')
-        with open(path) as file:
-            json_file: dict = json.load(file)
-            for value in json_file[key]:
-                if self.contais_equals(value,kwargs):
-                    return value
+        resp = self.dataBaseManager.getItem(key,**kwargs)
+        if isinstance(resp,tuple):
+            raise cherrypy.HTTPError(*resp)
 
-        return {}
-        
+        return resp
+
+    @cherrypy.expose(['update'])
+    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_in()
+    @cherrypy.popargs('key')
+    def updateItem(self,key:str,every:bool =False,**kwargs):
+        newValue = cherrypy.request.json
+        resp = self.dataBaseManager.updateItem(key,newValue,every,**kwargs)
+        if isinstance(resp,tuple):
+            raise cherrypy.HTTPError(*resp)
+        return resp
+    
+    @cherrypy.expose(['set'])
+    @cherrypy.tools.json_out()
+    @cherrypy.tools.json_in()
+    @cherrypy.popargs('key')
+    @preprocessingParamenters
+    def setItem(self,key:str,every:bool =False,**kwargs):
+        newValue = cherrypy.request.json
+        resp = self.dataBaseManager.setItem(key,newValue,every,**kwargs)
+        if isinstance(resp,tuple):
+            raise cherrypy.HTTPError(*resp)
+        return resp
+
+    @cherrypy.expose(['delete'])
+    @cherrypy.tools.json_out()
+    @cherrypy.popargs('key')
+    @preprocessingParamenters
+    def deleteItem(self,key:str,every:bool =False,**kwargs):
+        resp = self.dataBaseManager.deleteItem(key,every,**kwargs)
+        if isinstance(resp,tuple):
+            raise cherrypy.HTTPError(*resp)
+
+        return resp
 
     @cherrypy.expose(['list'])
     @cherrypy.tools.json_out()
     @cherrypy.popargs('key')
-    def listBase(self, key=None,paginate=False,pageCount=10,page=1,**kwargs):
-        pageCount = int(pageCount)
-        page = int(page)
-        if key not in self.list_databases():
-            raise cherrypy.HTTPError(404,f'DataBase {key} not found.')
-        path = os.path.join(self.context.fakeBasePath,key+'.json')
-        with open(path) as file:
-            json_file: dict = json.load(file)
-            json_list = []
-            for value in json_file[key]:
-                if self.contais_equals(value,kwargs):
-                    json_list.append(value)
+    @preprocessingParamenters
+    def listBase(self, key:str =None,paginate:bool =False,pageCount:int =10,page:int =1,**kwargs):
+        json_list = self.dataBaseManager.list_database(key,**kwargs)
+        if isinstance(json_list,tuple):
+            raise cherrypy.HTTPError(*json_list)
         info = {}
         count = len(json_list)
         if paginate:
@@ -58,16 +78,9 @@ class Server(object):
         resp = {'value':json_list}
         return {**resp,**info, "totalItens":count}
     
-    def contais_equals(self,el: dict,condition: dict):
-        if len(condition.items()) == 0:
-            return True
-        for key in condition.keys():
-            if key in el and el[key] != condition[key]:
-                return False
-        return True
                 
 
-def start_server(context: Context):
-    cherrypy.quickstart(Server(context))
+def start_server(dataBaseManager: DataBaseManager):
+    cherrypy.quickstart(Server(dataBaseManager))
 
 
