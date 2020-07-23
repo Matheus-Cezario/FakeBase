@@ -41,13 +41,6 @@ key: Nome do banco de dados que vai ser consultado
     kwargs: Vai conter todos os outros queryParams, estes serão usados como filtros
     - Caso vazio retorna a lista toda
     - Caso contrário retorna apenas aqueles que tiveram os campos contidos em kwargs iguais.
-### Exemplo
->  http://localhost:8080/list/users
-* Retorna todos os itens do arquivo users.json
->  http://localhost:8080/list/users?gender=male
-* Retorna todos os itens do arquivo users.json cujo campo gender seja igual a male
->  http://localhost:8080/list/users?paginate=true&pageCount=4&page=2
-* Retorna a segunda pagina com 4 itens dos itens do arquivo users.json, retorna também o total de itens, total de páginas
 
 * get
 > Url: http://localhost:8080/get/<key\>
@@ -106,11 +99,17 @@ key: Nome do banco de dados
 O *body* é um *JSON* que irá substituir os campos.
 
 
-### Exemplo
+### Exemplos
 >  http://localhost:8080/get/users
 * Retorna o primeiro item do arquivo users.json
 >  http://localhost:8080/get/users?gender=male
 * Retorna o primeiro item do arquivo users.json cujo campo gender seja igual a male
+>  http://localhost:8080/list/users
+* Retorna todos os itens do arquivo users.json
+>  http://localhost:8080/list/users?gender=male
+* Retorna todos os itens do arquivo users.json cujo campo gender seja igual a male
+>  http://localhost:8080/list/users?paginate=true&pageCount=4&page=2
+* Retorna a segunda pagina com 4 itens dos itens do arquivo users.json, retorna também o total de itens, total de páginas
 
 ## Como construir os Schematics
 Schematics são os padrões usados pra construir os bancos de dados.
@@ -239,7 +238,7 @@ Assim estará usando as configurações padrão do gerador, para alterar essas c
 
 
 ## Ligação entre campos
-Um campo de um *schematic* pode referênciar a outro campo desse mesmo *schematic* usando o padrão `@nome_dataBase,campo(s),condições,count@`
+Um campo de um *schematic* pode referênciar a outro campo desse mesmo *schematic* usando o padrão `__nomeDoCampo`
 
 ## Exemplo
 
@@ -271,7 +270,7 @@ Nesse exemplo o parâmetro *gender*  usado no campo *name* faz uma referência a
 
 
 ## Ligação entre bancos de dados
-Um campo de um *schematic* pode referênciar a outro *dataBase* usando o padrão `__nomeDoCampo`
+Um campo de um *schematic* pode referênciar a outro *dataBase* usando o padrão `@nome_dataBase,campo(s),condições,count@`
 
 ## Exemplo
 
