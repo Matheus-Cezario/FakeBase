@@ -4,7 +4,7 @@
 
 * generate
 
-    Gera os arquivos JSON's
+    Gera os arquivos JSON
 
 * server
 
@@ -12,7 +12,7 @@
 
 * start
 
-    Gera os arquivos JSON's e inicia o servidor
+    Gera os arquivos JSON e inicia o servidor
 
 ## Opições:
 * --path
@@ -35,11 +35,12 @@ Lista os itens de um banco de dados
 key: Nome do banco de dados que vai ser consultado
 * Query params
     paginate: Diz se a paginação está ativa, padrão `False`
-    pageCount: Número de itens pot página, padrão 10
+    pageCount: Número de itens por página, padrão 10
     page: página, padrão 1
-    **kwargs: Vai conter todos os outro queryParams, estes serão usados como filtros
-        * Caso vazio retorna a lista toda
-        * Caso contrário retorna apenas aqueles que tiveram os campos contidos em kwargs iguais.
+
+    kwargs: Vai conter todos os outros queryParams, estes serão usados como filtros
+    - Caso vazio retorna a lista toda
+    - Caso contrário retorna apenas aqueles que tiveram os campos contidos em kwargs iguais.
 ### Exemplo
 >  http://localhost:8080/list/users
 * Retorna todos os itens do arquivo users.json
@@ -51,13 +52,60 @@ key: Nome do banco de dados que vai ser consultado
 * get
 > Url: http://localhost:8080/get/<key\>
 
-Retorna um item do bando de dados
+Retorna um item do banco de dados
 
 key: Nome do banco de dados que vai ser consultado
 * Query params
-    **kwargs: Vai conter todos os queryParams, estes serão usados como filtros
-        * Caso vazio retorna o primeiro da lista
-        * Caso contrário retorna o primeiro que tiver os campos contidos em kwargs iguais.
+    kwargs: Vai conter todos os queryParams, estes serão usados como filtros
+    * Caso vazio retorna o primeiro da lista
+    * Caso contrário retorna o primeiro que tiver os campos contidos em kwargs iguais.
+
+* delete
+> Url: http://localhost:8080/delete/<key\>
+
+Deleta um ou vários itens de um banco de dados, retorna a lista de elementos deletados
+key: Nome do banco de dados
+* Query params
+    kwargs: Vai conter todos os queryParams, estes serão usados como filtros
+    * Caso vazio nada será deletado
+
+    every: Indica se a ação se aplica a mais de um elemento
+    * Caso true, todos os elementos que passarem no filtro serão deletados
+    * Padrão: false
+
+* update
+> Url: http://localhost:8080/update/<key\>
+
+Atualiza um ou varios itens de um banco de dados, retorna a lista de elementos atualizados
+key: Nome do banco de dados
+* Query params
+    kwargs: Vai conter todos os queryParams, estes serão usados como filtros
+    * Caso vazio nada será atualizado
+
+    every: Indica se a ação se aplica a mais de um elemento
+    * Caso true, todos os elementos que passarem no filtro serão atualizados
+    * Padrão: false
+
+* body
+O *body* é um *JSON* contendo os campos que vão ser atualizados e seus valores.
+
+* set
+> Url: http://localhost:8080/set/<key\>
+
+Substitui um ou varios itens de um banco de dados
+key: Nome do banco de dados
+* Query params
+    kwargs: Vai conter todos os queryParams, estes serão usados como filtros
+    * Caso vazio nada será substituido
+
+    every: Indica se a ação se aplica a mais de um elemento
+    * Caso true, todos os elementos que passarem no filtro serão substituidos
+    * Padrão: false
+
+* body
+O *body* é um *JSON* que irá substituir os campos.
+
+
 ### Exemplo
 >  http://localhost:8080/get/users
 * Retorna o primeiro item do arquivo users.json
@@ -127,7 +175,7 @@ Assim estará usando as configurações padrão do gerador, para alterar essas c
 * humanName
     * Gera um nome aleatório
     * parâmetros
-        *  gender: género do nome, padrão `None`
+        *  gender: gênero do nome, padrão `None`
             * Opções: `male | female | None`
         * valueFormat: Formato do nome, padrão `None`
             * Opções: `['first','last'] | None` 
@@ -137,7 +185,7 @@ Assim estará usando as configurações padrão do gerador, para alterar essas c
         * valueFormat: Formato da data, padrão `%d/%m/%Y %H:%M:%S`
         * dateType: Indica se é uma data futura ou não, padrão `all`
             * Opções: `past | all | future`
-        * dataRange: Indica o deslocamento máximo das datas em anos para o ano atual, patrão 20
+        * dataRange: Indica o deslocamento máximo das datas em anos para o ano atual, padrão 20
 * number
     * Gera um número aleatório
     * parâmetros
@@ -158,19 +206,40 @@ Assim estará usando as configurações padrão do gerador, para alterar essas c
         * data: Pode ser uma lista com os valores ou uma *string* com o caminho para um arquivo com os valores, cada um em uma linha
             * Observação: *data* é um parâmetro obrigatório
         * repeat: Indica se os valores podem se repedir, padrão `True`
-            * Observação: Caso o *repeat* seja `False` o `size` do *DataBase* que usar esse *schema* não for definido, ele será limitado pelo tamanho de *data*
+            * Observação: Caso o *repeat* seja `False` e o `size` do *DataBase* que usa esse *schema* não for definido, ele será limitado pelo tamanho de *data*
 * chooseSeveral
     * Escolhe um número aleatório de valores de uma lista
     * parâmetros
         * data: Pode ser uma lista com os valores ou uma *string* com o caminho para um arquivo com os valores, cada um em uma linha
             * Observação: *data* é um parâmetro obrigatório
         * repeat: Indica se os valores podem se repedir, padrão `True`
-        * minValue: Número minímo de valores que podem ser escolhidos, padrão 0
-        * maxValue: Número máximo de valores que podem ser escolhidos, padrão `len(data())`
+        * minValue: Número mínimo de valores que podem ser escolhidos, padrão 0
+        * maxValue: Número máximo de valores que podem ser escolhidos, padrão `len(data)`
+
+* sequence
+    * Retorna um item de uma lista de forma sequencial
+    * parâmetros
+        * data: Pode ser uma lista com os valores ou uma *string* com o caminho para um arquivo com os valores, cada um em uma linha
+            * Observação: *data* é um parâmetro obrigatório
+        * repeat: Indica se os valores podem se repedir, padrão `True`
+* numericSequence
+    * Retorna uma lista de números sequenciais
+    * parâmetros
+        * start: Começo da lista, padrão 0
+        * stop: Fim da lista, padrão 10
+        * step: Passo da lista, padrão 1
+
+* randomSequence
+    * Retorna uma fatia aleatória de uma lista
+    * parâmetros
+        * data: Pode ser uma lista com os valores ou uma *string* com o caminho para um arquivo com os valores, cada um em uma linha
+            * Observação: *data* é um parâmetro obrigatório
+        * size: Tamanho da fatia, padrão `len(data)/3`
+
 
 
 ## Ligação entre campos
-Um campo de um *schematic* pode referênciar outro campo desse mesmos *schematic* usando o padrão `__nomeDoCampo`
+Um campo de um *schematic* pode referênciar a outro campo desse mesmo *schematic* usando o padrão `@nome_dataBase,campo(s),condições,count@`
 
 ## Exemplo
 
@@ -199,3 +268,49 @@ Um campo de um *schematic* pode referênciar outro campo desse mesmos *schematic
 ```
 
 Nesse exemplo o parâmetro *gender*  usado no campo *name* faz uma referência ao campo *genre*, assim *gender* vai ter sempre o mesmo valor que *genre*
+
+
+## Ligação entre bancos de dados
+Um campo de um *schematic* pode referênciar a outro *dataBase* usando o padrão `__nomeDoCampo`
+
+## Exemplo
+
+```JSON
+{
+  "Schematics": {
+    "user": {
+      "name": "humanName",
+      "card": {
+        "method": "chooseSeveral",
+        "data": "@products:name:price<40:2@",
+        "repeat": false
+      }
+    },
+    "product": {
+      "price": {
+        "method": "number",
+        "start": 10,
+        "stop": 90,
+        "precision": 2
+      },
+      "name": {
+        "method": "choice",
+        "data": "productsName.txt",
+        "repeat": false
+      }
+    }
+  },
+  "DataBase": {
+      "users":{
+        "schema":"user",
+        "size": 10
+      },
+      "products":  "product"
+  }
+}
+
+```
+
+Nesse exemplo o parametro *data* do campo *card* faz uma referência ao *dataBase products*, dos elementos do *dataBase products* será retornado apenas o campo *name*, para retornar mais campos basta colocá-los entre colchetes `[name,_id]`, para esse exemplo limitamos no *card* apenas os *products* cujo o *price* for menor de 40 e por fim serão retornados 2 elementos como especifica o *count*
+
+A referência para *dataBase* sempre retorna uma lista.

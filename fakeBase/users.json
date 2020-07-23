@@ -1,9 +1,137 @@
 {
     "users": [
         {
-            "genre": "female",
-            "name": "Monica Granada",
+            "genre": "male",
+            "name": "Troy Bowman",
             "age": 1,
+            "randomSequence": [
+                3,
+                4,
+                5,
+                6
+            ],
+            "card": [
+                {
+                    "name": "Batata",
+                    "price": 27.83
+                }
+            ],
+            "_id": "588348d1669ad943"
+        },
+        {
+            "genre": "female",
+            "name": "Amy Barker",
+            "age": 2,
+            "randomSequence": [
+                5,
+                6,
+                7,
+                8
+            ],
+            "card": [
+                {
+                    "name": "Batata",
+                    "price": 27.83
+                }
+            ],
+            "_id": "38f56e128f9f592c"
+        },
+        {
+            "genre": "female",
+            "name": "Cathy Baker",
+            "age": 3,
+            "randomSequence": [
+                2,
+                3,
+                4,
+                5
+            ],
+            "card": [],
+            "_id": "352bd012543eb8bc"
+        },
+        {
+            "genre": "male",
+            "name": "Richard Young",
+            "age": 1,
+            "randomSequence": [
+                4,
+                5,
+                6,
+                7
+            ],
+            "card": [
+                {
+                    "name": "Batata",
+                    "price": 27.83
+                },
+                {
+                    "name": "Arroz Doce",
+                    "price": 39.4292
+                }
+            ],
+            "_id": "04af38d631eb1e89"
+        },
+        {
+            "genre": "female",
+            "name": "Linda Kimble",
+            "age": 2,
+            "randomSequence": [
+                3,
+                4,
+                5,
+                6
+            ],
+            "card": [],
+            "_id": "f0284fabe0433b56"
+        },
+        {
+            "genre": "female",
+            "name": "Marie Huffman",
+            "age": 3,
+            "randomSequence": [
+                2,
+                3,
+                4,
+                5
+            ],
+            "card": [],
+            "_id": "8789f2506b0a56f2"
+        },
+        {
+            "genre": "female",
+            "name": "Sarah Matthews",
+            "age": 1,
+            "randomSequence": [
+                4,
+                5,
+                6,
+                7
+            ],
+            "card": [
+                {
+                    "name": "Batata",
+                    "price": 27.83
+                }
+            ],
+            "_id": "bde5d7bc5c6c0e20"
+        },
+        {
+            "genre": "male",
+            "name": "Humberto Witek",
+            "age": 2,
+            "randomSequence": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "card": [],
+            "_id": "881b99cc173ff09b"
+        },
+        {
+            "genre": "male",
+            "name": "Michael Luker",
+            "age": 3,
             "randomSequence": [
                 2,
                 3,
@@ -12,256 +140,19 @@
             ],
             "card": [
                 {
-                    "precision": 3,
-                    "price": "R$ 60.283",
-                    "name": "Sorvete",
-                    "Due date": "13/11/2023 18:50:29",
-                    "_id": "ef6ddffebf02052e"
-                },
-                {
-                    "precision": 3,
-                    "price": "R$ 77.682",
-                    "name": "Arroz Doce",
-                    "Due date": "14/11/2026 11:33:26",
-                    "_id": "a5af1166c1423136"
-                }
-            ],
-            "_id": "c8cea8ac2dc0fe3e"
-        },
-        {
-            "genre": "female",
-            "name": "Eva Slattery",
-            "age": 2,
-            "randomSequence": [
-                5,
-                6,
-                7,
-                8
-            ],
-            "card": [
-                {
-                    "precision": 3,
-                    "price": "R$ 77.682",
-                    "name": "Arroz Doce",
-                    "Due date": "14/11/2026 11:33:26",
-                    "_id": "a5af1166c1423136"
-                },
-                {
-                    "precision": 3,
-                    "price": "R$ 60.283",
-                    "name": "Sorvete",
-                    "Due date": "13/11/2023 18:50:29",
-                    "_id": "ef6ddffebf02052e"
-                }
-            ],
-            "_id": "e6873f3648f106c7"
-        },
-        {
-            "genre": "female",
-            "name": "Ruth Binion",
-            "age": 3,
-            "randomSequence": [
-                3,
-                4,
-                5,
-                6
-            ],
-            "card": [
-                {
-                    "precision": 4,
-                    "price": "R$ 11.0831",
                     "name": "Batata",
-                    "Due date": "11/04/2024 15:17:41",
-                    "_id": "8909f2ad77a69594"
-                }
-            ],
-            "_id": "828ff658dda0080f"
-        },
-        {
-            "genre": "female",
-            "name": "Norma Mccafferty",
-            "age": 1,
-            "randomSequence": [
-                5,
-                6,
-                7,
-                8
-            ],
-            "card": [
+                    "price": 27.83
+                },
                 {
-                    "precision": 3,
-                    "price": "R$ 77.682",
                     "name": "Arroz Doce",
-                    "Due date": "14/11/2026 11:33:26",
-                    "_id": "a5af1166c1423136"
-                },
-                {
-                    "precision": 3,
-                    "price": "R$ 60.283",
-                    "name": "Sorvete",
-                    "Due date": "13/11/2023 18:50:29",
-                    "_id": "ef6ddffebf02052e"
+                    "price": 39.4292
                 }
             ],
-            "_id": "7820bd088327615b"
-        },
-        {
-            "genre": "female",
-            "name": "Shanon Beaton",
-            "age": 2,
-            "randomSequence": [
-                5,
-                6,
-                7,
-                8
-            ],
-            "card": [
-                {
-                    "precision": 3,
-                    "price": "R$ 60.283",
-                    "name": "Sorvete",
-                    "Due date": "13/11/2023 18:50:29",
-                    "_id": "ef6ddffebf02052e"
-                },
-                {
-                    "precision": 4,
-                    "price": "R$ 11.0831",
-                    "name": "Batata",
-                    "Due date": "11/04/2024 15:17:41",
-                    "_id": "8909f2ad77a69594"
-                }
-            ],
-            "_id": "5e5f4829054dab5d"
+            "_id": "42affb525c0915f6"
         },
         {
             "genre": "male",
-            "name": "Leonard Chasin",
-            "age": 3,
-            "randomSequence": [
-                3,
-                4,
-                5,
-                6
-            ],
-            "card": [
-                {
-                    "precision": 3,
-                    "price": "R$ 77.682",
-                    "name": "Arroz Doce",
-                    "Due date": "14/11/2026 11:33:26",
-                    "_id": "a5af1166c1423136"
-                },
-                {
-                    "precision": 4,
-                    "price": "R$ 11.0831",
-                    "name": "Batata",
-                    "Due date": "11/04/2024 15:17:41",
-                    "_id": "8909f2ad77a69594"
-                }
-            ],
-            "_id": "9fe5e7f6c796a0b2"
-        },
-        {
-            "genre": "male",
-            "name": "James Jasper",
-            "age": 1,
-            "randomSequence": [
-                3,
-                4,
-                5,
-                6
-            ],
-            "card": [
-                {
-                    "precision": 4,
-                    "price": "R$ 11.0831",
-                    "name": "Batata",
-                    "Due date": "11/04/2024 15:17:41",
-                    "_id": "8909f2ad77a69594"
-                },
-                {
-                    "precision": 3,
-                    "price": "R$ 60.283",
-                    "name": "Sorvete",
-                    "Due date": "13/11/2023 18:50:29",
-                    "_id": "ef6ddffebf02052e"
-                }
-            ],
-            "_id": "25118f51b401086f"
-        },
-        {
-            "genre": "female",
-            "name": "Rosa Morin",
-            "age": 2,
-            "randomSequence": [
-                3,
-                4,
-                5,
-                6
-            ],
-            "card": [
-                {
-                    "precision": 3,
-                    "price": "R$ 77.682",
-                    "name": "Arroz Doce",
-                    "Due date": "14/11/2026 11:33:26",
-                    "_id": "a5af1166c1423136"
-                },
-                {
-                    "precision": 4,
-                    "price": "R$ 11.0831",
-                    "name": "Batata",
-                    "Due date": "11/04/2024 15:17:41",
-                    "_id": "8909f2ad77a69594"
-                },
-                {
-                    "precision": 3,
-                    "price": "R$ 60.283",
-                    "name": "Sorvete",
-                    "Due date": "13/11/2023 18:50:29",
-                    "_id": "ef6ddffebf02052e"
-                }
-            ],
-            "_id": "27b3233a9b3bad37"
-        },
-        {
-            "genre": "female",
-            "name": "Nancy Crate",
-            "age": 3,
-            "randomSequence": [
-                5,
-                6,
-                7,
-                8
-            ],
-            "card": [
-                {
-                    "precision": 4,
-                    "price": "R$ 11.0831",
-                    "name": "Batata",
-                    "Due date": "11/04/2024 15:17:41",
-                    "_id": "8909f2ad77a69594"
-                },
-                {
-                    "precision": 3,
-                    "price": "R$ 60.283",
-                    "name": "Sorvete",
-                    "Due date": "13/11/2023 18:50:29",
-                    "_id": "ef6ddffebf02052e"
-                },
-                {
-                    "precision": 3,
-                    "price": "R$ 77.682",
-                    "name": "Arroz Doce",
-                    "Due date": "14/11/2026 11:33:26",
-                    "_id": "a5af1166c1423136"
-                }
-            ],
-            "_id": "f6e2110e1e1d01ba"
-        },
-        {
-            "genre": "female",
-            "name": "Betty Yin",
+            "name": "David Knutsen",
             "age": 1,
             "randomSequence": [
                 5,
@@ -271,28 +162,11 @@
             ],
             "card": [
                 {
-                    "precision": 3,
-                    "price": "R$ 60.283",
-                    "name": "Sorvete",
-                    "Due date": "13/11/2023 18:50:29",
-                    "_id": "ef6ddffebf02052e"
-                },
-                {
-                    "precision": 4,
-                    "price": "R$ 11.0831",
                     "name": "Batata",
-                    "Due date": "11/04/2024 15:17:41",
-                    "_id": "8909f2ad77a69594"
-                },
-                {
-                    "precision": 3,
-                    "price": "R$ 77.682",
-                    "name": "Arroz Doce",
-                    "Due date": "14/11/2026 11:33:26",
-                    "_id": "a5af1166c1423136"
+                    "price": 27.83
                 }
             ],
-            "_id": "bdb62c496505eb01"
+            "_id": "9f5ad0dfa7371fd1"
         }
     ]
 }

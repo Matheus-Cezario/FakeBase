@@ -115,6 +115,7 @@ class DataBaseManager:
             return fields
         if isinstance(count, str) and count == 'None':
             count = None
+        count = int(count)
         fieldsC = fields.copy()
         if not count and len(fieldsC):
             c = random.randint(0, len(fieldsC))
@@ -125,7 +126,12 @@ class DataBaseManager:
             return l
         if len(fieldsC) <= count:
             return fieldsC
-        return fieldsC[0:count]
+        resp = []
+        for _ in range(count):
+            r = random.choice(fieldsC)
+            fieldsC.remove(r)
+            resp.append(r)
+        return resp
 
     
     def _filter_conditions(self,fields,conditions:str):
@@ -144,6 +150,7 @@ class DataBaseManager:
                 if condition in field:
                     conditionsCopy = conditionsCopy.replace(condition,str(field[condition]))
             try:
+                print(conditionsCopy)
                 resp = eval(conditionsCopy)
                 if resp:
                     fieldsResp.append(field)

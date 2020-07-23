@@ -15,7 +15,15 @@ class moneyPipe(transform):
     def __init__(self):
         super().__init__()
     
-    def currency(self, value,**kwargs):
+    def currency(self, value,prefix="R$ ",brSeparator = True):
         if isinstance(value,tuple):
-            return 'R$ ' + str(value[0]), value[1],value[2]
-        return 'R$ ' + str(value)
+            return prefix + self.__prepareMoney(value[0],brSeparator), value[1],value[2]
+        return prefix + self.__prepareMoney(value,brSeparator)
+    
+    def __prepareMoney(self,money,brSeparator):
+        money = '{:,.2f}'.format(money)
+        if brSeparator:
+            main, frac = money.split('.')
+            main = main.replace(',','.')
+            money = main + ','+ frac
+        return money

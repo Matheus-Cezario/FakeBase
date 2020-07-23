@@ -20,7 +20,7 @@
       },
       "card": {
         "method": "chooseSeveral",
-        "data": "@products:None:precision>2:all@",
+        "data": "@products:[name,price]:price<40:2@",
         "repeat": false
       }
     },
@@ -29,13 +29,12 @@
         "method": "number",
         "start": 10,
         "stop": 90,
-        "precision": "__precision",
-        "transform": "currency"
+        "precision": "__precision"
+ 
       },
       "name": {
         "method": "choice",
-        "data": "teste.txt",
-        "repeat": false
+        "data": "teste.txt"
       },
       "Due date": {
         "method": "date",
