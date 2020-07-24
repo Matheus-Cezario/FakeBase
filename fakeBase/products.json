@@ -1,137 +1,106 @@
 {
     "products": [
         {
-            "precision": 4,
-            "price": 52.5143,
-            "name": "Feij\u00c3\u00a3o",
-            "Due date": "17/04/2030 18:17:56",
-            "_id": "c7060d83031cb631"
+            "price": 20.0,
+            "name": "Melancia",
+            "Due date": "08/10/2022 06:57:51",
+            "_id": "58dd5fd41e993335"
         },
         {
-            "precision": 3,
-            "price": 78.59,
+            "price": 46.7,
+            "name": "MelÃ£o",
+            "Due date": "24/08/2040 14:00:48",
+            "_id": "c6087e6431ad0065"
+        },
+        {
+            "price": 40.98,
+            "name": "Cebola",
+            "Due date": "14/07/2023 03:24:09",
+            "_id": "0767d886b91116ac"
+        },
+        {
+            "price": 42.88,
+            "name": "MaÃ§Ã£",
+            "Due date": "17/06/2026 04:03:01",
+            "_id": "508443f04b47a55a"
+        },
+        {
+            "price": 51.13,
             "name": "Arroz Doce",
-            "Due date": "09/03/2039 19:40:51",
-            "_id": "262e6390183e9b3b"
+            "Due date": "05/06/2028 12:30:09",
+            "_id": "6f1dc45ae364e37e"
         },
         {
-            "precision": 2,
-            "price": 75.29,
+            "price": 43.68,
+            "name": "FeijÃ£o",
+            "Due date": "06/06/2040 11:27:26",
+            "_id": "3f97b0dfb536ba29"
+        },
+        {
+            "price": 55.51,
+            "name": "Coca-cola",
+            "Due date": "07/08/2026 12:08:54",
+            "_id": "321fc4fd3a995474"
+        },
+        {
+            "price": 43.32,
+            "name": "Laranja",
+            "Due date": "21/10/2031 06:56:05",
+            "_id": "2c9341a94a7948e7"
+        },
+        {
+            "price": 58.2,
+            "name": "MacarrÃ£o",
+            "Due date": "19/02/2035 05:51:56",
+            "_id": "b7c1ce7f813a49e4"
+        },
+        {
+            "price": 53.77,
+            "name": "Alho",
+            "Due date": "21/08/2028 12:52:08",
+            "_id": "20e7cecc48c9c682"
+        },
+        {
+            "price": 49.25,
+            "name": "Chocolate",
+            "Due date": "12/12/2035 19:26:02",
+            "_id": "052ec791444368bc"
+        },
+        {
+            "price": 49.38,
             "name": "Batata",
-            "Due date": "24/09/2035 10:00:19",
-            "_id": "8a243c4786996e70"
+            "Due date": "23/02/2023 13:23:14",
+            "_id": "078a4215c8940d76"
         },
         {
-            "precision": 4,
-            "price": 39.4292,
-            "name": "Arroz Doce",
-            "Due date": "31/07/2032 19:07:24",
-            "_id": "e8e6bc85292e1c54"
+            "price": 42.39,
+            "name": "Banana",
+            "Due date": "08/09/2036 15:08:03",
+            "_id": "94a843f4f038440e"
         },
         {
-            "precision": 2,
-            "price": 27.83,
-            "name": "Batata",
-            "Due date": "19/03/2036 06:05:25",
-            "_id": "4a33a497c149b691"
+            "price": 41.09,
+            "name": "Bolacha",
+            "Due date": "23/02/2024 14:16:57",
+            "_id": "a4a001c5ce793715"
         },
         {
-            "precision": 4,
-            "price": 86.6363,
+            "price": 52.0,
+            "name": "Nescau",
+            "Due date": "01/07/2035 11:58:51",
+            "_id": "1206fc52af6a135f"
+        },
+        {
+            "price": 42.7,
             "name": "Sorvete",
-            "Due date": "22/11/2031 19:29:45",
-            "_id": "fad26caea2d696ce"
+            "Due date": "09/06/2033 10:38:39",
+            "_id": "373adc83187296b3"
         },
         {
-            "precision": 4,
-            "price": 48.468,
-            "name": "Sorvete",
-            "Due date": "28/11/2033 14:21:23",
-            "_id": "5e84da53d2eb9903"
-        },
-        {
-            "precision": 4,
-            "price": 84.9628,
-            "name": "Batata",
-            "Due date": "08/08/2029 19:05:00",
-            "_id": "23c0ad70ce882090"
-        },
-        {
-            "precision": 4,
-            "price": 17.475,
-            "name": "Sorvete",
-            "Due date": "09/10/2032 16:36:02",
-            "_id": "9de4e2ca27edf13c"
-        },
-        {
-            "precision": 3,
-            "price": 42.026,
-            "name": "Arroz Doce",
-            "Due date": "07/12/2040 18:45:50",
-            "_id": "b59d26dfefb27b95"
-        },
-        {
-            "precision": 4,
-            "price": 69.6324,
-            "name": "Arroz Doce",
-            "Due date": "20/05/2023 23:23:29",
-            "_id": "cc250e5b9c59645c"
-        },
-        {
-            "precision": 3,
-            "price": 88.052,
-            "name": "Batata",
-            "Due date": "28/09/2021 11:30:51",
-            "_id": "471d27cf140c5cba"
-        },
-        {
-            "precision": 2,
-            "price": 20.18,
-            "name": "Batata",
-            "Due date": "30/06/2035 20:50:17",
-            "_id": "fa536a200c880f63"
-        },
-        {
-            "precision": 4,
-            "price": 35.7421,
-            "name": "Feij\u00c3\u00a3o",
-            "Due date": "25/08/2026 10:00:14",
-            "_id": "19767001627dd9a3"
-        },
-        {
-            "precision": 2,
-            "price": 71.17,
-            "name": "Batata",
-            "Due date": "02/04/2038 19:40:27",
-            "_id": "d1303d98a26231b0"
-        },
-        {
-            "precision": 3,
-            "price": 74.582,
-            "name": "Arroz Doce",
-            "Due date": "03/02/2028 23:39:18",
-            "_id": "f413f5f8c757c2a3"
-        },
-        {
-            "precision": 3,
-            "price": 41.145,
-            "name": "Sorvete",
-            "Due date": "04/10/2022 18:00:12",
-            "_id": "86ba98b2c6b3a341"
-        },
-        {
-            "precision": 3,
-            "price": 40.169,
-            "name": "Arroz Doce",
-            "Due date": "02/08/2036 23:00:57",
-            "_id": "d1dce9726b1bbe00"
-        },
-        {
-            "precision": 3,
-            "price": 16.811,
-            "name": "Batata",
-            "Due date": "08/09/2035 09:47:35",
-            "_id": "925de377616f3e7b"
+            "price": 56.33,
+            "name": "Uva",
+            "Due date": "19/04/2022 04:03:10",
+            "_id": "bc2df34346cfc04d"
         }
     ]
 }

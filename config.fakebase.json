@@ -6,13 +6,10 @@
         "gender": "__genre"
       },
       "age": {
-        "method": "sequence",
-        "data":[1,2,3]
-      },
-      "randomSequence": {
-        "method": "randomSequence",
-        "data":[1,2,3,4,5,6,7,8],
-        "size":4
+        "method": "number",
+        "start": 10,
+        "stop": 90,
+        "numberType": "int"
       },
       "genre": {
         "method": "choice",
@@ -20,29 +17,30 @@
       },
       "card": {
         "method": "chooseSeveral",
-        "data": "@products:[name,price]:price<40:2@",
+        "data": "@products:[name,price,_id]:price<50:all@",
         "repeat": false
+      },
+      "favoriteProduct": {
+        "method": "choice",
+        "data": "__card"
       }
     },
     "product": {
       "price": {
         "method": "number",
-        "start": 10,
-        "stop": 90,
-        "precision": "__precision"
+        "start": 40,
+        "stop": 60,
+        "precision": 2
  
       },
       "name": {
         "method": "choice",
-        "data": "teste.txt"
+        "data": "productsName.txt",
+        "repeat": false
       },
       "Due date": {
         "method": "date",
         "dateType": "future"
-      },
-      "precision": {
-        "method":"choice",
-        "data": [2,3,4]
       }
     }
   },

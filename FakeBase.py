@@ -63,7 +63,7 @@ def generate_fake_database(context: Context):
     resp = dataBaseManager.generate_all_databases()
     for key, value in zip(resp.keys(),resp.values()):
         with open(os.path.join(context.fakeBasePath,key+'.json'), 'w',newline='', encoding="utf-8") as file:
-            json.dump({key:value},file,indent=4)
+            json.dump({key:value},file,indent=4,ensure_ascii=False)
     return dataBaseManager
 
 

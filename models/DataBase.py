@@ -21,7 +21,6 @@ class Database:
 
     def generate_values(self):
         assert self.schematic is not None, 'Schematic is None'
-        print('size',self.size)
         return [self.schematic.generate_values() for _ in range(self.size)]
 
     @property

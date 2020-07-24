@@ -2,171 +2,310 @@
     "users": [
         {
             "genre": "male",
-            "name": "Troy Bowman",
-            "age": 1,
-            "randomSequence": [
-                3,
-                4,
-                5,
-                6
-            ],
+            "name": "Andrew Nunez",
+            "age": 36,
             "card": [
                 {
-                    "name": "Batata",
-                    "price": 27.83
-                }
-            ],
-            "_id": "588348d1669ad943"
-        },
-        {
-            "genre": "female",
-            "name": "Amy Barker",
-            "age": 2,
-            "randomSequence": [
-                5,
-                6,
-                7,
-                8
-            ],
-            "card": [
-                {
-                    "name": "Batata",
-                    "price": 27.83
-                }
-            ],
-            "_id": "38f56e128f9f592c"
-        },
-        {
-            "genre": "female",
-            "name": "Cathy Baker",
-            "age": 3,
-            "randomSequence": [
-                2,
-                3,
-                4,
-                5
-            ],
-            "card": [],
-            "_id": "352bd012543eb8bc"
-        },
-        {
-            "genre": "male",
-            "name": "Richard Young",
-            "age": 1,
-            "randomSequence": [
-                4,
-                5,
-                6,
-                7
-            ],
-            "card": [
-                {
-                    "name": "Batata",
-                    "price": 27.83
+                    "name": "FeijÃ£o",
+                    "price": 43.68,
+                    "_id": "3f97b0dfb536ba29"
                 },
                 {
-                    "name": "Arroz Doce",
-                    "price": 39.4292
+                    "name": "Bolacha",
+                    "price": 41.09,
+                    "_id": "a4a001c5ce793715"
                 }
             ],
-            "_id": "04af38d631eb1e89"
+            "favoriteProduct": {
+                "name": "Bolacha",
+                "price": 41.09,
+                "_id": "a4a001c5ce793715"
+            },
+            "_id": "5214053a07875191"
         },
         {
             "genre": "female",
-            "name": "Linda Kimble",
-            "age": 2,
-            "randomSequence": [
-                3,
-                4,
-                5,
-                6
-            ],
-            "card": [],
-            "_id": "f0284fabe0433b56"
-        },
-        {
-            "genre": "female",
-            "name": "Marie Huffman",
-            "age": 3,
-            "randomSequence": [
-                2,
-                3,
-                4,
-                5
-            ],
-            "card": [],
-            "_id": "8789f2506b0a56f2"
-        },
-        {
-            "genre": "female",
-            "name": "Sarah Matthews",
-            "age": 1,
-            "randomSequence": [
-                4,
-                5,
-                6,
-                7
-            ],
+            "name": "Rose Leonardo",
+            "age": 69,
             "card": [
                 {
-                    "name": "Batata",
-                    "price": 27.83
-                }
-            ],
-            "_id": "bde5d7bc5c6c0e20"
-        },
-        {
-            "genre": "male",
-            "name": "Humberto Witek",
-            "age": 2,
-            "randomSequence": [
-                1,
-                2,
-                3,
-                4
-            ],
-            "card": [],
-            "_id": "881b99cc173ff09b"
-        },
-        {
-            "genre": "male",
-            "name": "Michael Luker",
-            "age": 3,
-            "randomSequence": [
-                2,
-                3,
-                4,
-                5
-            ],
-            "card": [
-                {
-                    "name": "Batata",
-                    "price": 27.83
+                    "name": "Sorvete",
+                    "price": 42.7,
+                    "_id": "373adc83187296b3"
                 },
                 {
-                    "name": "Arroz Doce",
-                    "price": 39.4292
+                    "name": "Chocolate",
+                    "price": 49.25,
+                    "_id": "052ec791444368bc"
+                },
+                {
+                    "name": "Batata",
+                    "price": 49.38,
+                    "_id": "078a4215c8940d76"
+                },
+                {
+                    "name": "Melancia",
+                    "price": 44.49,
+                    "_id": "58dd5fd41e993335"
+                },
+                {
+                    "name": "MelÃ£o",
+                    "price": 46.7,
+                    "_id": "c6087e6431ad0065"
+                },
+                {
+                    "name": "MaÃ§Ã£",
+                    "price": 42.88,
+                    "_id": "508443f04b47a55a"
+                },
+                {
+                    "name": "Cebola",
+                    "price": 40.98,
+                    "_id": "0767d886b91116ac"
                 }
             ],
-            "_id": "42affb525c0915f6"
+            "favoriteProduct": {
+                "name": "Batata",
+                "price": 49.38,
+                "_id": "078a4215c8940d76"
+            },
+            "_id": "5c6bc649234765d6"
+        },
+        {
+            "genre": "female",
+            "name": "Patricia Smith",
+            "age": 28,
+            "card": [
+                {
+                    "name": "FeijÃ£o",
+                    "price": 43.68,
+                    "_id": "3f97b0dfb536ba29"
+                },
+                {
+                    "name": "Cebola",
+                    "price": 40.98,
+                    "_id": "0767d886b91116ac"
+                },
+                {
+                    "name": "Batata",
+                    "price": 49.38,
+                    "_id": "078a4215c8940d76"
+                },
+                {
+                    "name": "Sorvete",
+                    "price": 42.7,
+                    "_id": "373adc83187296b3"
+                },
+                {
+                    "name": "Chocolate",
+                    "price": 49.25,
+                    "_id": "052ec791444368bc"
+                },
+                {
+                    "name": "MaÃ§Ã£",
+                    "price": 42.88,
+                    "_id": "508443f04b47a55a"
+                }
+            ],
+            "favoriteProduct": {
+                "name": "MaÃ§Ã£",
+                "price": 42.88,
+                "_id": "508443f04b47a55a"
+            },
+            "_id": "49558619aa53ff81"
+        },
+        {
+            "genre": "female",
+            "name": "Deanna Brandly",
+            "age": 67,
+            "card": [
+                {
+                    "name": "MelÃ£o",
+                    "price": 46.7,
+                    "_id": "c6087e6431ad0065"
+                },
+                {
+                    "name": "FeijÃ£o",
+                    "price": 43.68,
+                    "_id": "3f97b0dfb536ba29"
+                },
+                {
+                    "name": "MaÃ§Ã£",
+                    "price": 42.88,
+                    "_id": "508443f04b47a55a"
+                },
+                {
+                    "name": "Sorvete",
+                    "price": 42.7,
+                    "_id": "373adc83187296b3"
+                },
+                {
+                    "name": "Cebola",
+                    "price": 40.98,
+                    "_id": "0767d886b91116ac"
+                },
+                {
+                    "name": "Batata",
+                    "price": 49.38,
+                    "_id": "078a4215c8940d76"
+                }
+            ],
+            "favoriteProduct": {
+                "name": "MaÃ§Ã£",
+                "price": 42.88,
+                "_id": "508443f04b47a55a"
+            },
+            "_id": "c70352c90f727d06"
+        },
+        {
+            "genre": "female",
+            "name": "Deana Larsen",
+            "age": 30,
+            "card": [
+                {
+                    "name": "Sorvete",
+                    "price": 42.7,
+                    "_id": "373adc83187296b3"
+                },
+                {
+                    "name": "Melancia",
+                    "price": 44.49,
+                    "_id": "58dd5fd41e993335"
+                },
+                {
+                    "name": "Bolacha",
+                    "price": 41.09,
+                    "_id": "a4a001c5ce793715"
+                },
+                {
+                    "name": "MaÃ§Ã£",
+                    "price": 42.88,
+                    "_id": "508443f04b47a55a"
+                },
+                {
+                    "name": "MelÃ£o",
+                    "price": 46.7,
+                    "_id": "c6087e6431ad0065"
+                },
+                {
+                    "name": "Laranja",
+                    "price": 43.32,
+                    "_id": "2c9341a94a7948e7"
+                },
+                {
+                    "name": "Cebola",
+                    "price": 40.98,
+                    "_id": "0767d886b91116ac"
+                },
+                {
+                    "name": "Batata",
+                    "price": 49.38,
+                    "_id": "078a4215c8940d76"
+                },
+                {
+                    "name": "FeijÃ£o",
+                    "price": 43.68,
+                    "_id": "3f97b0dfb536ba29"
+                },
+                {
+                    "name": "Chocolate",
+                    "price": 49.25,
+                    "_id": "052ec791444368bc"
+                }
+            ],
+            "favoriteProduct": {
+                "name": "Chocolate",
+                "price": 49.25,
+                "_id": "052ec791444368bc"
+            },
+            "_id": "bffe7c8b5f90edd5"
         },
         {
             "genre": "male",
-            "name": "David Knutsen",
-            "age": 1,
-            "randomSequence": [
-                5,
-                6,
-                7,
-                8
-            ],
+            "name": "Larry Powers",
+            "age": 83,
             "card": [
                 {
-                    "name": "Batata",
-                    "price": 27.83
+                    "name": "Sorvete",
+                    "price": 42.7,
+                    "_id": "373adc83187296b3"
                 }
             ],
-            "_id": "9f5ad0dfa7371fd1"
+            "favoriteProduct": {
+                "name": "Sorvete",
+                "price": 42.7,
+                "_id": "373adc83187296b3"
+            },
+            "_id": "29050bf5a8d221b8"
+        },
+        {
+            "genre": "female",
+            "name": "Hazel Cheney",
+            "age": 80,
+            "card": [
+                {
+                    "name": "Bolacha",
+                    "price": 41.09,
+                    "_id": "a4a001c5ce793715"
+                },
+                {
+                    "name": "Sorvete",
+                    "price": 42.7,
+                    "_id": "373adc83187296b3"
+                },
+                {
+                    "name": "Chocolate",
+                    "price": 49.25,
+                    "_id": "052ec791444368bc"
+                },
+                {
+                    "name": "Melancia",
+                    "price": 44.49,
+                    "_id": "58dd5fd41e993335"
+                }
+            ],
+            "favoriteProduct": {
+                "name": "Chocolate",
+                "price": 49.25,
+                "_id": "052ec791444368bc"
+            },
+            "_id": "06d2f4097314a403"
+        },
+        {
+            "genre": "female",
+            "name": "Felisa Hayes",
+            "age": 12,
+            "card": [
+                {
+                    "name": "MelÃ£o",
+                    "price": 46.7,
+                    "_id": "c6087e6431ad0065"
+                }
+            ],
+            "favoriteProduct": {
+                "name": "MelÃ£o",
+                "price": 46.7,
+                "_id": "c6087e6431ad0065"
+            },
+            "_id": "75d091be6536a8a1"
+        },
+        {
+            "genre": "male",
+            "name": "Claude Kissee",
+            "age": 20,
+            "card": [
+                {
+                    "name": "FeijÃ£o",
+                    "price": 43.68,
+                    "_id": "3f97b0dfb536ba29"
+                }
+            ],
+            "favoriteProduct": {
+                "name": "FeijÃ£o",
+                "price": 43.68,
+                "_id": "3f97b0dfb536ba29"
+            },
+            "_id": "e2daed1122292b65"
         }
     ]
 }

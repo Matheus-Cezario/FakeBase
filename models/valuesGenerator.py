@@ -114,6 +114,8 @@ class randomValuesGenerator(valuesGenerator):
         if isinstance(data, str):
             with open(data) as file:
                 data = file.readlines()
+        if not len(data):
+            return None
         value = random.choice(data)
         if not repeat:
             data.remove(value)
