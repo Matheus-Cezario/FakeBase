@@ -1,5 +1,5 @@
 # FakeBase
-[video](./videos/fakebase.mp4)
+
 ## Comandos:
 
 * generate
