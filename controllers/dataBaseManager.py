@@ -192,7 +192,7 @@ class DataBaseManager:
         if key not in self.list_databases():
             return (404,f'DataBase {key} not found.')
         path = os.path.join(self.context.fakeBasePath,key+'.json')
-        with open(path,encoding="utf-8") as file:
+        with open(path,encoding="utf8") as file:
             json_file: dict = json.load(file)
             json_list = []
             for value in json_file[key]:
@@ -204,7 +204,7 @@ class DataBaseManager:
         if key not in self.list_databases():
             return (404,f'DataBase {key} not found.')
         path = os.path.join(self.context.fakeBasePath,key+'.json')
-        with open(path,encoding="utf-8") as file:
+        with open(path,encoding="utf8") as file:
             json_file: dict = json.load(file)
             for value in json_file[key]:
                 if  len(kwargs) == 0 or self.contais_equals(value,kwargs):
@@ -235,7 +235,7 @@ class DataBaseManager:
             return (400,'Item not found')
         path = os.path.join(self.context.fakeBasePath,key+'.json')
         resp = []
-        with open(path,encoding="utf-8") as file:
+        with open(path,encoding="utf8") as file:
             json_file: dict = json.load(file)
             for value in json_file[key]:
                 if self.contais_equals(value,kwargs):
@@ -243,7 +243,7 @@ class DataBaseManager:
                     resp.append(value)
                     if not every:
                         break
-        with open(path,'w',encoding="utf-8") as file:
+        with open(path,'w',encoding="utf8") as file:
             json.dump(json_file,file,indent=4,ensure_ascii=False)
         return resp
     
@@ -254,7 +254,7 @@ class DataBaseManager:
             return (400,'Item not found')
         path = os.path.join(self.context.fakeBasePath,key+'.json')
         resp = []
-        with open(path,encoding="utf-8") as file:
+        with open(path,encoding="utf8") as file:
             json_file: dict = json.load(file)
             for index, value in enumerate(json_file[key]):
                 if self.contais_equals(value,kwargs):
@@ -263,7 +263,7 @@ class DataBaseManager:
                     resp.append(r)
                     if not every:
                         break
-        with open(path,'w',encoding="utf-8") as file:
+        with open(path,'w',encoding="utf8") as file:
             json.dump(json_file,file,indent=4,ensure_ascii=False)
         return resp
 
@@ -274,7 +274,7 @@ class DataBaseManager:
             return (400,'Item not found')
         path = os.path.join(self.context.fakeBasePath,key+'.json')
         resp = {}
-        with open(path,encoding="utf-8") as file:
+        with open(path,encoding="utf8") as file:
             json_file: dict = json.load(file)
             for index, value in enumerate(json_file[key]):
                 if self.contais_equals(value,kwargs):
@@ -282,7 +282,7 @@ class DataBaseManager:
                     json_file[key][index] = resp
                     if not every:
                         break
-        with open(path,'w',encoding="utf-8") as file:
+        with open(path,'w',encoding="utf8") as file:
             json.dump(json_file,file,indent=4,ensure_ascii=False)
         return resp
 

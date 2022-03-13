@@ -112,7 +112,7 @@ class randomValuesGenerator(valuesGenerator):
     @preprocessingParamenters
     def choice(self, data: Union[str,list], repeat: bool = True):
         if isinstance(data, str):
-            with open(data) as file:
+            with open(data,encoding="UTF8") as file:
                 data = file.readlines()
         if not len(data):
             return None
