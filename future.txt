@@ -1,6 +1,0 @@
-@dataBase ref,campo(s),condições,count@
-@products:_id:name=Batata@
-@products:[_id,name]:precision=2:all@
-@products:[precision,name]:None:[5,7]@
-
-// @?(.*?)[:|@]

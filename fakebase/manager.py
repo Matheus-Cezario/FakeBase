@@ -1,0 +1,362 @@
+"""Orquestração: gera os dados falsos e expõe as operações de CRUD."""
+
+from __future__ import annotations
+
+import json
+import random
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+
+from faker import Faker
+
+from .config import Config
+from .errors import LinkError, NotFoundError
+from .generators import GenContext, get as get_generator
+from .query import ListOptions
+from .references import ReferenceResolver, parse_reference
+from .schematic import Schematic
+from .storage import MontyStorage, open_storage
+
+Document = Dict[str, Any]
+
+
+@dataclass
+class DatabaseReport:
+    """Resultado da geração de um banco."""
+
+    name: str
+    schema: str
+    size: int
+    notes: List[str] = field(default_factory=list)
+
+
+@dataclass
+class GenerationReport:
+    """Resultado completo de ``fakebase generate``."""
+
+    databases: List[DatabaseReport] = field(default_factory=list)
+    seed: Optional[int] = None
+
+    @property
+    def total(self) -> int:
+        return sum(item.size for item in self.databases)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "seed": self.seed,
+            "total": self.total,
+            "databases": [
+                {"name": d.name, "schema": d.schema, "size": d.size, "notes": d.notes}
+                for d in self.databases
+            ],
+        }
+
+
+class FakeBase:
+    """Fachada principal: gera os bancos falsos e opera sobre eles."""
+
+    def __init__(self, config: Config, storage: Optional[MontyStorage] = None):
+        self.config = config
+        self.settings = config.settings
+        self.storage = storage or open_storage(config.settings)
+        self.rng = random.Random(self.settings.seed)
+        self.faker = Faker(self.settings.locale)
+        if self.settings.seed is not None:
+            self.faker.seed_instance(self.settings.seed)
+
+    # ------------------------------------------------------------------
+    # Geração
+    # ------------------------------------------------------------------
+    def generate(self, only: Optional[Sequence[str]] = None, progress=None) -> GenerationReport:
+        """(Re)gera todos os bancos, respeitando as dependências entre eles."""
+        report = GenerationReport(seed=self.settings.seed)
+        wanted = set(only) if only else None
+        for name in self.generation_order():
+            if wanted is not None and name not in wanted:
+                continue
+            spec = self.config.database(name)
+            schematic = self.config.schematics[spec.schema]
+            size, notes = self._resolve_size(name, schematic)
+            documents = self._build_documents(name, schematic, size, fresh=True)
+            self.storage.replace_collection(name, documents)
+            report.databases.append(
+                DatabaseReport(name=name, schema=spec.schema, size=len(documents), notes=notes)
+            )
+            if progress:
+                progress(name, len(documents))
+        return report
+
+    def append(self, name: str, count: int) -> List[Document]:
+        """Gera mais linhas em um banco já existente, sem apagar as atuais."""
+        schematic = self.schematic_of(name)
+        documents = self._build_documents(name, schematic, count, fresh=False)
+        self.storage.insert(name, documents)
+        return documents
+
+    def preview(self, name: str, count: int = 1) -> List[Document]:
+        """Gera linhas de exemplo sem gravar nada."""
+        return self._build_documents(name, self.schematic_of(name), count, fresh=False)
+
+    def generation_order(self) -> List[str]:
+        """Ordem em que os bancos precisam ser gerados (ordenação topológica)."""
+        graph = self.dependency_graph()
+        order: List[str] = []
+        visited: Dict[str, int] = {}
+
+        def visit(node: str, stack: Tuple[str, ...]) -> None:
+            state = visited.get(node)
+            if state == 2:
+                return
+            if state == 1:
+                chain = " -> ".join([*stack, node])
+                raise LinkError(f"Referência circular entre bancos de dados: {chain}")
+            visited[node] = 1
+            for dependency in sorted(graph.get(node, set())):
+                visit(dependency, (*stack, node))
+            visited[node] = 2
+            order.append(node)
+
+        for name in self.config.database_names:
+            visit(name, ())
+        return order
+
+    def dependency_graph(self) -> Dict[str, set]:
+        """Mapa banco -> bancos que ele referencia."""
+        graph: Dict[str, set] = {}
+        for spec in self.config.databases:
+            schematic = self.config.schematics[spec.schema]
+            targets = {parse_reference(raw).database for raw in schematic.references()}
+            graph[spec.name] = {target for target in targets if target != spec.name}
+        return graph
+
+    # ------------------------------------------------------------------
+    def _build_documents(
+        self, name: str, schematic: Schematic, count: int, *, fresh: bool
+    ) -> List[Document]:
+        resolver = ReferenceResolver(self.storage, self.rng)
+        context = GenContext(
+            rng=self.rng,
+            faker=self.faker,
+            base_dir=self.config.base_dir,
+            database=name,
+        )
+        if not fresh:
+            self._prime_state(name, schematic, context)
+        documents: List[Document] = []
+        for index in range(max(count, 0)):
+            context.row_index = index
+            documents.append(schematic.generate(context, resolver))
+        return documents
+
+    def _prime_state(self, name: str, schematic: Schematic, context: GenContext) -> None:
+        """Continua contadores e conjuntos de unicidade a partir do que já existe."""
+        if not self.storage.exists(name):
+            return
+        existing = self.storage.count(name)
+        for field_name, spec in schematic.fields.items():
+            scope = f"{name}.{field_name}"
+            state = context.state.setdefault(scope, {})
+            if spec.unique:
+                state["unique"] = set(self.storage.distinct(name, field_name))
+            # 'choice' e 'sequence' sem repetição consomem um pool: os valores
+            # já gravados precisam sair dele antes de gerar mais linhas.
+            if spec.method in ("choice", "sequence") and _says_no_repeat(spec.params.get("repeat")):
+                state["exclude"] = _hashable_set(self.storage.distinct(name, field_name))
+                if spec.method == "sequence":
+                    state["index"] = existing
+            if spec.method in ("autoIncrement", "counter"):
+                highest = self.storage.find_one(name, {}, sort=[(field_name, -1)])
+                if highest and isinstance(highest.get(field_name), int):
+                    state["counter"] = highest[field_name]
+
+    def _resolve_size(self, name: str, schematic: Schematic) -> Tuple[int, List[str]]:
+        spec = self.config.database(name)
+        notes: List[str] = []
+        limit = schematic.size_limit(self.config.base_dir)
+
+        if spec.size is not None:
+            size = spec.size
+        elif spec.size_range is not None:
+            size = self.rng.randint(*spec.size_range)
+        elif limit is not None:
+            size = limit
+            notes.append(f"tamanho limitado a {limit} por um gerador sem repetição")
+        else:
+            size = self.rng.randint(self.settings.minSize, self.settings.maxSize)
+            notes.append(f"tamanho sorteado entre {self.settings.minSize} e {self.settings.maxSize}")
+
+        if limit is not None and size > limit:
+            notes.append(
+                f"'size' pedia {size}, mas um gerador sem repetição limita a {limit} linhas"
+            )
+            size = limit
+        return size, notes
+
+    # ------------------------------------------------------------------
+    # Consultas e CRUD
+    # ------------------------------------------------------------------
+    def database_names(self) -> List[str]:
+        return self.config.database_names
+
+    def ensure_database(self, name: str) -> str:
+        if name not in self.config.database_names:
+            raise NotFoundError(
+                f"Banco de dados '{name}' não existe. "
+                f"Disponíveis: {', '.join(self.config.database_names)}"
+            )
+        return name
+
+    def schematic_of(self, name: str) -> Schematic:
+        self.ensure_database(name)
+        return self.config.schematic_for(name)
+
+    def list(self, name: str, options: ListOptions) -> Tuple[List[Document], int]:
+        self.ensure_database(name)
+        total = self.storage.count(name, options.filter)
+        documents = self.storage.find(
+            name,
+            options.filter,
+            projection=options.projection,
+            sort=options.sort,
+            skip=options.skip,
+            limit=options.limit,
+        )
+        return documents, total
+
+    def get(self, name: str, options: ListOptions) -> Optional[Document]:
+        self.ensure_database(name)
+        return self.storage.find_one(
+            name, options.filter, projection=options.projection, sort=options.sort
+        )
+
+    def get_by_id(self, name: str, item_id: Any) -> Optional[Document]:
+        self.ensure_database(name)
+        return self.storage.find_one(name, {"_id": item_id})
+
+    def count(self, name: str, filter: Optional[Document] = None) -> int:
+        self.ensure_database(name)
+        return self.storage.count(name, filter or {})
+
+    def distinct(self, name: str, field_name: str, filter: Optional[Document] = None) -> List[Any]:
+        self.ensure_database(name)
+        return self.storage.distinct(name, field_name, filter or {})
+
+    def create(self, name: str, document: Mapping[str, Any], *, fill: bool = True) -> Document:
+        """Insere um documento; os campos ausentes são gerados pelo schematic."""
+        self.ensure_database(name)
+        payload: Document = dict(document or {})
+        if fill:
+            generated = self.preview(name, 1)[0]
+            generated.update(payload)
+            payload = generated
+        payload.setdefault("_id", self.new_id())
+        self.storage.insert(name, [payload])
+        return payload
+
+    def update(
+        self, name: str, filter: Document, changes: Mapping[str, Any], *, every: bool = False
+    ) -> List[Document]:
+        self.ensure_database(name)
+        return self.storage.update(name, filter, dict(changes), every=every)
+
+    def replace(
+        self, name: str, filter: Document, document: Mapping[str, Any], *, every: bool = False
+    ) -> List[Document]:
+        self.ensure_database(name)
+        return self.storage.replace(name, filter, dict(document), every=every)
+
+    def delete(self, name: str, filter: Document, *, every: bool = False) -> List[Document]:
+        self.ensure_database(name)
+        return self.storage.delete(name, filter, every=every)
+
+    def drop(self, name: str) -> None:
+        self.ensure_database(name)
+        self.storage.drop(name)
+
+    def new_id(self) -> Any:
+        generator = get_generator(self.settings.idGenerator)
+        context = GenContext(rng=self.rng, faker=self.faker, base_dir=self.config.base_dir)
+        return generator.call(context, {})
+
+    # ------------------------------------------------------------------
+    # Import / export
+    # ------------------------------------------------------------------
+    def stats(self) -> Dict[str, Any]:
+        stored = self.storage.stats()
+        return {
+            "storage": {"path": self.storage.path, "backend": self.storage.backend},
+            "databases": [
+                {
+                    "name": name,
+                    "schema": self.config.database(name).schema,
+                    "count": stored.get(name, 0),
+                    "generated": name in stored,
+                }
+                for name in self.config.database_names
+            ],
+            "orphans": sorted(set(stored) - set(self.config.database_names)),
+        }
+
+    def export(self, target: Path, *, only: Optional[Sequence[str]] = None, indent: int = 2) -> List[Path]:
+        """Grava cada banco em um arquivo JSON (compatível com a versão 1.x)."""
+        target = Path(target)
+        target.mkdir(parents=True, exist_ok=True)
+        written: List[Path] = []
+        for name in only or self.config.database_names:
+            documents = self.storage.find(name, {})
+            path = target / f"{name}.json"
+            path.write_text(
+                json.dumps({name: documents}, indent=indent, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            written.append(path)
+        return written
+
+    def import_json(self, source: Path, *, replace: bool = True) -> Dict[str, int]:
+        """Carrega arquivos JSON (um por banco) para dentro do NoSQL."""
+        source = Path(source)
+        files: Iterable[Path]
+        if source.is_dir():
+            files = sorted(source.glob("*.json"))
+        else:
+            files = [source]
+        loaded: Dict[str, int] = {}
+        for path in files:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            for name, documents in _iter_collections(payload, path.stem):
+                if replace:
+                    self.storage.drop(name)
+                self.storage.insert(name, documents)
+                loaded[name] = loaded.get(name, 0) + len(documents)
+        return loaded
+
+    def close(self) -> None:
+        self.storage.close()
+
+
+def _hashable_set(values: Iterable[Any]) -> set:
+    """Conjunto com os valores que podem virar chave; o resto é ignorado."""
+    result = set()
+    for value in values:
+        try:
+            result.add(value)
+        except TypeError:  # listas e dicionários não entram no conjunto
+            continue
+    return result
+
+
+def _says_no_repeat(value: Any) -> bool:
+    """``repeat`` desligado, tanto como ``false`` quanto como ``"false"``."""
+    if isinstance(value, str):
+        return value.strip().lower() in ("false", "0", "no", "off", "n")
+    return value is False
+
+
+def _iter_collections(payload: Any, fallback: str):
+    if isinstance(payload, list):
+        yield fallback, payload
+    elif isinstance(payload, dict):
+        for name, documents in payload.items():
+            if isinstance(documents, list):
+                yield name, documents

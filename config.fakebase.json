@@ -1,54 +1,138 @@
 {
+  "Settings": {
+    "locale": "pt_BR",
+    "seed": 42,
+    "storage": "sqlite",
+    "storagePath": "./.fakebase",
+    "port": 8080
+  },
   "Schematics": {
     "user": {
       "name": {
         "method": "humanName",
-        "gender": "__genre"
+        "gender": "__gender"
       },
-      "age": {
-        "method": "number",
-        "start": 10,
-        "stop": 90,
-        "numberType": "int"
-      },
-      "genre": {
+      "gender": {
         "method": "choice",
         "data": ["male", "female"]
       },
-      "card": {
+      "email": {
+        "method": "email",
+        "name": "__name",
+        "unique": true
+      },
+      "cpf": "cpf",
+      "age": {
+        "method": "integer",
+        "start": 18,
+        "stop": 90
+      },
+      "active": {
+        "method": "boolean",
+        "chance": 0.8
+      },
+      "address": {
+        "method": "object",
+        "fields": {
+          "street": "street",
+          "city": "city",
+          "state": { "method": "state", "abbr": true },
+          "zipCode": "postcode"
+        }
+      },
+      "cart": {
         "method": "chooseSeveral",
-        "data": "@products:[name,price,_id]:price<50:all@",
-        "repeat": false
+        "data": "@products:[_id,name,price]:price<50@",
+        "repeat": false,
+        "maxValue": 4
       },
       "favoriteProduct": {
         "method": "choice",
-        "data": "__card"
+        "data": "__cart"
+      },
+      "createdAt": {
+        "method": "isoDate",
+        "dateType": "past",
+        "dataRange": 3
       }
     },
     "product": {
-      "price": {
-        "method": "number",
-        "start": 40,
-        "stop": 60,
-        "precision": 2
- 
+      "code": {
+        "method": "pattern",
+        "mask": "PRD-####-!!"
       },
       "name": {
         "method": "choice",
         "data": "productsName.txt",
         "repeat": false
       },
-      "Due date": {
+      "price": {
+        "method": "number",
+        "start": 10,
+        "stop": 90,
+        "precision": 2
+      },
+      "priceLabel": {
+        "method": "template",
+        "pattern": "{price}",
+        "transform": "currency"
+      },
+      "stock": {
+        "method": "integer",
+        "start": 0,
+        "stop": 200
+      },
+      "tags": {
+        "method": "chooseSeveral",
+        "data": ["promoção", "novo", "importado", "frágil", "orgânico"],
+        "repeat": false,
+        "minValue": 1,
+        "maxValue": 3
+      },
+      "dueDate": {
         "method": "date",
-        "dateType": "future"
+        "dateType": "future",
+        "dataRange": 2
+      }
+    },
+    "order": {
+      "number": {
+        "method": "autoIncrement",
+        "start": 1000
+      },
+      "customer": {
+        "method": "choice",
+        "data": "@users:[_id,name,email]@"
+      },
+      "items": {
+        "method": "chooseSeveral",
+        "data": "@products:[_id,name,price]@",
+        "repeat": false,
+        "minValue": 1,
+        "maxValue": 5
+      },
+      "status": {
+        "method": "choice",
+        "data": ["pendente", "pago", "enviado", "entregue", "cancelado"],
+        "weights": [3, 5, 4, 6, 1]
+      },
+      "shippedAt": {
+        "method": "isoDate",
+        "dateType": "past",
+        "dataRange": 1,
+        "nullable": 0.3
       }
     }
   },
   "DataBase": {
-      "users":{
-        "schema":"user",
-        "size": 10
-      },
-      "products":  "product"
+    "users": {
+      "schema": "user",
+      "size": 25
+    },
+    "products": "product",
+    "orders": {
+      "schema": "order",
+      "size": [30, 60]
+    }
   }
 }
