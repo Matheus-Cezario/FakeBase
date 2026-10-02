@@ -3,6 +3,9 @@
 Além das rotas REST novas (``/users``, ``/users/{id}``, ...) as rotas da
 versão 1.x continuam funcionando: ``/list/users``, ``/get/users``,
 ``/update/users``, ``/set/users`` e ``/delete/users``.
+
+As queries customizadas (arquivos ``.sql`` da pasta de queries) viram rotas
+próprias, registradas antes das rotas REST genéricas.
 """
 
 from __future__ import annotations
@@ -12,6 +15,7 @@ from math import ceil
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, Request, Response
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 from .. import __version__
@@ -26,6 +30,7 @@ from ..errors import (
 from ..generators import available as available_generators
 from ..manager import FakeBase
 from ..pipes import available as available_pipes
+from ..queries import QueryEndpoint
 from ..query import ListOptions, build_filter, coerce_bool, coerce_int
 
 STATUS_BY_ERROR = {
@@ -85,6 +90,8 @@ def create_app(fakebase: FakeBase) -> FastAPI:
         ),
     )
     app.state.fakebase = fakebase
+    queries = fakebase.load_queries()
+    app.state.queries = queries
 
     if settings.cors:
         from fastapi.middleware.cors import CORSMiddleware
@@ -130,6 +137,7 @@ def create_app(fakebase: FakeBase) -> FastAPI:
                 }
                 for name in fakebase.database_names()
             ],
+            "queries": [{"method": q.method, "url": q.route} for q in queries],
         }
 
     @app.get("/_schema", tags=["meta"], summary="Schematics da configuração")
@@ -162,6 +170,25 @@ def create_app(fakebase: FakeBase) -> FastAPI:
                 {"name": spec.name, "doc": spec.doc, "params": spec.params} for spec in available_pipes()
             ],
         }
+
+    @app.get("/_queries", tags=["meta"], summary="Queries customizadas carregadas")
+    def list_queries() -> List[Dict[str, Any]]:
+        return [endpoint.describe() for endpoint in queries]
+
+    # ------------------------------------------------------------------
+    # Queries customizadas (antes das rotas genéricas, que capturariam a URL)
+    # ------------------------------------------------------------------
+    for endpoint in queries:
+        app.add_api_route(
+            endpoint.route,
+            _query_route(fakebase, endpoint),
+            methods=[endpoint.method],
+            tags=["queries"],
+            summary=endpoint.summary,
+            description=endpoint.description or f"Arquivo `{endpoint.relative}`",
+            openapi_extra=endpoint.openapi(),
+            name=f"{endpoint.method} {endpoint.route}",
+        )
 
     # ------------------------------------------------------------------
     # Rotas compatíveis com a versão 1.x
@@ -290,6 +317,20 @@ def create_app(fakebase: FakeBase) -> FastAPI:
         return fakebase.delete(database, options.filter, every=True)
 
     return app
+
+
+def _query_route(fakebase: FakeBase, endpoint: QueryEndpoint):
+    async def run_query(request: Request) -> Response:
+        body: Any = {}
+        if endpoint.method != "GET":
+            body = await json_body(request)
+            if not isinstance(body, dict):
+                raise QueryError("O corpo da requisição precisa ser um objeto JSON com os parâmetros")
+        values = endpoint.bind(path=request.path_params, query=query_dict(request), body=body)
+        status, payload = endpoint.execute(fakebase, values)
+        return JSONResponse(status_code=status, content=jsonable_encoder(payload))
+
+    return run_query
 
 
 def _require_filter(options: ListOptions, action: str) -> None:

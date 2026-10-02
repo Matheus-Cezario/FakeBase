@@ -35,6 +35,7 @@ http://localhost:8080/users?age__gt=30&sort=-age&limit=5
   - [Filtros e operadores](#filtros-e-operadores)
   - [Paginação, ordenação e projeção](#paginação-ordenação-e-projeção)
   - [Rotas da versão 1.x](#rotas-da-versão-1x)
+- [Queries customizadas](#queries-customizadas)
 - [Arquivo de configuração](#arquivo-de-configuração)
   - [Settings](#settings)
   - [Schematics](#schematics)
@@ -105,7 +106,8 @@ fakebase [OPÇÕES GLOBAIS] COMANDO [ARGUMENTOS]
 | `start` | `generate` + `serve` |
 | `list` | Mostra cada banco e quantos documentos tem |
 | `preview users -n 3` | Mostra linhas de exemplo sem gravar nada — ótimo para ajustar um schematic |
-| `validate` | Confere a configuração e mostra a ordem de geração |
+| `validate` | Confere a configuração (inclusive as queries) e mostra a ordem de geração |
+| `queries` | Lista as [queries customizadas](#queries-customizadas) e as rotas que criam. `--json` |
 | `generators` | Lista os geradores e seus parâmetros. `--search cpf`, `--transforms` |
 | `export pasta` | Salva cada banco em um `.json` (formato da versão 1.x) |
 | `import pasta` | Carrega arquivos `.json` para dentro do NoSQL. `--append` mantém o que já existe |
@@ -121,6 +123,7 @@ Opções globais:
 | `--storage` | `sqlite` | `sqlite`, `flatfile` ou `memory` |
 | `--seed` | — | Semente aleatória: mesma semente, mesmos dados |
 | `--locale` | `pt_BR` | Locale dos dados falsos (`en_US`, `es_ES`, `fr_FR`, ...) |
+| `--queries` | `./queries` | Pasta das queries customizadas |
 
 ---
 
@@ -226,6 +229,117 @@ filtro**. Sem filtro, a resposta é `400` e nenhum documento é tocado.
 
 ---
 
+## Queries customizadas
+
+Escreva consultas em SQL, salve em arquivos `.sql` dentro da pasta `queries/` e
+cada arquivo vira um endpoint. As subpastas entram na URL:
+
+```
+queries/
+  users/index.sql                 GET    /queries/users
+  users/index.create.sql          POST   /queries/users
+  users/[id].sql                  GET    /queries/users/{id}
+  users/[id].deactivate.sql       PUT    /queries/users/{id}
+  products/reports/low-stock.sql  GET    /queries/products/reports/low-stock
+```
+
+- `index.sql` responde pela URL da própria pasta.
+- `[nome]` (em arquivo ou pasta) vira um parâmetro de caminho.
+- O que vem depois do primeiro ponto do nome é ignorado na URL: assim
+  `index.sql` e `index.create.sql` atendem a mesma URL com métodos diferentes.
+- Dois arquivos com o mesmo método na mesma URL são um erro na inicialização.
+
+A **primeira linha** do arquivo é um comentário com o método HTTP: `-- GET`,
+`-- POST`, `-- PUT` ou `-- DELETE`. O texto depois do método e os outros
+comentários do topo viram o resumo e a descrição da rota no Swagger (`/docs`).
+
+```sql
+-- GET Usuários ativos, com filtros opcionais
+-- @param city = null
+-- @param minAge int = 0
+-- @param limit int = 20
+SELECT name, email, age, address.city AS city
+FROM users
+WHERE active
+  AND age >= :minAge
+  AND (:city IS NULL OR address.city LIKE :city)
+ORDER BY name
+LIMIT :limit
+```
+
+```
+GET /queries/users?minAge=30&city=%25Rio%25
+```
+
+### Parâmetros
+
+`:nome` na query é um parâmetro nomeado. O valor vem, nesta ordem de
+prioridade, do caminho da URL (`[id]`), do corpo JSON (em `POST`, `PUT` e
+`DELETE`) e da query string. Parâmetros sem valor e sem padrão respondem `400`.
+
+Valores da URL passam pela mesma conversão dos filtros (`30` vira número,
+`true` vira booleano). Para controlar o tipo ou dar um valor padrão, declare no
+topo do arquivo:
+
+| Declaração | Efeito |
+| --- | --- |
+| `-- @param id string` | sempre texto, mesmo que o valor pareça um número |
+| `-- @param limit int = 20` | inteiro, opcional, padrão 20 |
+| `-- @param city = null` | opcional; com `null` o filtro opcional fica desligado |
+| `-- @param tags list` | lista: `?tags=a,b` ou `?tags=a&tags=b` |
+
+Tipos: `auto` (padrão), `string`, `int`, `float`, `number`, `bool`, `list`, `json`.
+
+Como os parâmetros são resolvidos antes de consultar o banco, condições que só
+envolvem parâmetros viram constantes. É assim que `(:city IS NULL OR ...)`
+funciona como filtro opcional.
+
+### SQL suportado
+
+Uma instrução por arquivo; cada tabela é um banco do `DataBase`.
+
+| Instrução | Forma |
+| --- | --- |
+| `SELECT` | `SELECT * \| col [AS apelido], ... \| COUNT(*) [AS apelido] FROM banco [WHERE ...] [ORDER BY col [ASC\|DESC], ...] [LIMIT n] [OFFSET n]` |
+| `INSERT` | `INSERT INTO banco (col, ...) VALUES (valor, ...), (...)` |
+| `UPDATE` | `UPDATE banco SET col = valor, estoque = estoque - :qtd [WHERE ...]` |
+| `DELETE` | `DELETE FROM banco [WHERE ...]` |
+
+No `WHERE`: `=`, `!=`/`<>`, `<`, `<=`, `>`, `>=`, `[NOT] LIKE`/`ILIKE` (`%` e `_`,
+sem diferenciar maiúsculas), `[NOT] IN (1, 2)` ou `IN :lista`,
+`[NOT] BETWEEN a AND b`, `IS [NOT] NULL`, `AND`, `OR`, `NOT` e parênteses. Um
+campo sozinho (`WHERE active`) equivale a `active = true`. Campos aninhados
+usam ponto (`address.city`). Comparar dois campos entre si, `JOIN` e
+`GROUP BY` não são suportados.
+
+`UPDATE` e `DELETE` sem `WHERE` afetam todos os documentos do banco — diferente
+das rotas REST, aqui a query é escrita de propósito.
+
+### Respostas
+
+| Instrução | Status | Corpo |
+| --- | --- | --- |
+| `SELECT` | 200 | lista de documentos |
+| `SELECT COUNT(*) AS total` | 200 | `{"total": 42}` |
+| `INSERT` | 201 | `{"database": "users", "inserted": 1, "value": [...]}` |
+| `UPDATE` | 200 | `{"database": "users", "updated": 3, "value": [...]}` |
+| `DELETE` | 200 | `{"database": "users", "deleted": 3, "value": [...]}` |
+
+Diretivas no topo do arquivo:
+
+- `-- @one` devolve só o primeiro documento (ou `404` se não houver nenhum),
+  em vez da lista ou do envelope — ideal para rotas `[id]`.
+- `-- @fill false` faz o `INSERT` gravar só as colunas informadas. Por padrão,
+  como no `POST /users`, os campos que faltam são gerados pelo schematic.
+
+As queries são lidas quando o servidor sobe: depois de criar ou alterar um
+arquivo, reinicie o `serve`. Erros (método ausente, SQL inválido, banco
+inexistente, rota duplicada) aparecem na inicialização indicando o arquivo, e
+`fakebase validate` faz a mesma checagem sem subir o servidor. A rota
+`GET /_queries` lista as queries carregadas.
+
+---
+
 ## Arquivo de configuração
 
 ```jsonc
@@ -250,6 +364,8 @@ filtro**. Sem filtro, a resposta é `400` e nenhum documento é tocado.
 | `host` / `port` | `127.0.0.1` / `8080` | Endereço do servidor |
 | `cors` | `true` | Libera CORS (útil para front-ends locais) |
 | `latency` | `0` | Atraso artificial por requisição, em ms |
+| `queriesPath` | `./queries` | Pasta das [queries customizadas](#queries-customizadas), relativa ao arquivo de configuração |
+| `queriesPrefix` | `/queries` | Prefixo das URLs das queries (`""` para não usar prefixo) |
 
 ### Schematics
 
@@ -482,7 +598,7 @@ python -m pytest
 ```
 
 A suíte cobre consultas, geradores, transforms, schematics, referências entre
-bancos, persistência, CLI e todas as rotas HTTP (inclusive as da versão 1.x).
+bancos, persistência, CLI, todas as rotas HTTP (inclusive as da versão 1.x) e as queries customizadas.
 
 ---
 
@@ -510,6 +626,8 @@ fakebase/
   references.py     referências @banco:campos:condições:quantidade@
   manager.py        orquestração: ordem de geração, tamanhos, CRUD, import/export
   query.py          query string -> filtro no dialeto MongoDB
+  sql.py            subconjunto de SQL -> filtros e operações do MongoDB
+  queries.py        queries customizadas: arquivos .sql -> endpoints
   pipes.py          transforms
   generators/       catálogo de geradores de valores
   storage/          interface de persistência + implementação MontyDB

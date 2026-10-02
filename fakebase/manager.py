@@ -13,6 +13,7 @@ from faker import Faker
 from .config import Config
 from .errors import LinkError, NotFoundError
 from .generators import GenContext, get as get_generator
+from .queries import QueryEndpoint, load_queries
 from .query import ListOptions
 from .references import ReferenceResolver, parse_reference
 from .schematic import Schematic
@@ -269,6 +270,14 @@ class FakeBase:
     def delete(self, name: str, filter: Document, *, every: bool = False) -> List[Document]:
         self.ensure_database(name)
         return self.storage.delete(name, filter, every=every)
+
+    def load_queries(self) -> List[QueryEndpoint]:
+        """Carrega as queries customizadas da pasta configurada."""
+        return load_queries(
+            self.config.queries_dir,
+            prefix=self.settings.queriesPrefix,
+            databases=self.config.database_names,
+        )
 
     def drop(self, name: str) -> None:
         self.ensure_database(name)

@@ -82,8 +82,14 @@ pass_state = click.make_pass_decorator(CliState)
 )
 @click.option("--seed", type=int, default=None, help="Semente aleatória: mesma semente, mesmos dados.")
 @click.option("--locale", default=None, help="Locale dos dados falsos, por exemplo pt_BR ou en_US.")
+@click.option(
+    "--queries",
+    "queriesPath",
+    default=None,
+    help="Pasta das queries customizadas (padrão ./queries, relativa à configuração).",
+)
 @click.pass_context
-def cli(ctx, config_path, storagePath, storage, seed, locale):
+def cli(ctx, config_path, storagePath, storage, seed, locale, queriesPath):
     """Gera bancos de dados falsos e serve tudo por rotas CRUD."""
     ctx.obj = CliState(
         config_path=config_path,
@@ -91,6 +97,7 @@ def cli(ctx, config_path, storagePath, storage, seed, locale):
         storage=storage,
         seed=seed,
         locale=locale,
+        queriesPath=queriesPath,
     )
 
 
@@ -185,8 +192,32 @@ def validate(state: CliState):
     click.echo(f"Configuração válida: {config.path}")
     click.echo(f"  schematics: {', '.join(sorted(config.schematics))}")
     click.echo(f"  bancos:     {', '.join(config.database_names)}")
-    order = FakeBase(config).generation_order()
+    fakebase = FakeBase(config)
+    order = fakebase.generation_order()
     click.echo(f"  ordem de geração: {' -> '.join(order)}")
+    click.echo(f"  queries:    {len(fakebase.load_queries())} em {config.queries_dir}")
+
+
+@cli.command()
+@click.option("--json", "as_json", is_flag=True, help="Mostra as queries em JSON.")
+@pass_state
+def queries(state: CliState, as_json):
+    """Lista as queries customizadas e as rotas que elas criam."""
+    endpoints = state.fakebase.load_queries()
+    if as_json:
+        click.echo(json.dumps([e.describe() for e in endpoints], ensure_ascii=False, indent=2, default=str))
+        return
+    click.echo(f"Pasta de queries: {state.config.queries_dir}")
+    if not endpoints:
+        click.echo("  nenhuma query encontrada (crie arquivos .sql nessa pasta)")
+        return
+    for endpoint in endpoints:
+        params = ", ".join(
+            spec.name if spec.required else f"{spec.name}?" for spec in endpoint.params
+        )
+        click.echo(f"  {endpoint.method:<6} {endpoint.route:<36} {endpoint.relative}")
+        if params:
+            click.echo(f"         parâmetros: {params}")
 
 
 @cli.command()
@@ -283,6 +314,8 @@ def _announce(fakebase: FakeBase, host: Optional[str], port: Optional[int]) -> N
     click.echo(f"  documentação interativa: {base}/docs")
     for name in fakebase.database_names():
         click.echo(f"  {base}/{name}")
+    for endpoint in fakebase.load_queries():
+        click.echo(f"  {endpoint.method:<6} {base}{endpoint.route}")
 
 
 def main() -> None:

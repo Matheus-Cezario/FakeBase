@@ -112,16 +112,25 @@ class MontyStorage:
     def update(
         self, collection: str, filter: Document, changes: Document, *, every: bool = False
     ) -> List[Document]:
-        """Atualiza apenas os campos informados e devolve os documentos novos."""
+        """Atualiza apenas os campos informados e devolve os documentos novos.
+
+        ``changes`` pode ser um documento simples (vira ``$set``) ou já usar
+        operadores de atualização, como ``{"$set": {...}, "$inc": {...}}``.
+        """
         targets = self._targets(collection, filter, every)
         if not targets:
             return []
-        payload = {key: value for key, value in changes.items() if key != "_id"}
+        operators = changes if any(key.startswith("$") for key in changes) else {"$set": changes}
+        payload = {}
+        for operator, fields in operators.items():
+            fields = {key: value for key, value in fields.items() if key != "_id"}
+            if fields:
+                payload[operator] = fields
         if not payload:
             return targets
         handle = self._collection(collection)
         ids = [document["_id"] for document in targets]
-        handle.update_many({"_id": {"$in": ids}}, {"$set": payload})
+        handle.update_many({"_id": {"$in": ids}}, payload)
         return self.find(collection, {"_id": {"$in": ids}})
 
     def replace(

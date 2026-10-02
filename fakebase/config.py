@@ -18,6 +18,7 @@ KNOWN_KEYS = {SCHEMATICS_KEY, DATABASE_KEY, SETTINGS_KEY}
 
 DEFAULT_CONFIG_PATH = "./config.fakebase.json"
 DEFAULT_STORAGE_PATH = "./.fakebase"
+DEFAULT_QUERIES_PATH = "./queries"
 
 
 @dataclass
@@ -36,6 +37,8 @@ class Settings:
     port: int = 8080
     cors: bool = True
     latency: int = 0
+    queriesPath: str = DEFAULT_QUERIES_PATH
+    queriesPrefix: str = "/queries"
 
     @classmethod
     def parse(cls, raw: Mapping[str, Any]) -> "Settings":
@@ -215,6 +218,12 @@ class Config:
                         f"'{reference.database}', que não existe. "
                         f"Bancos disponíveis: {', '.join(sorted(known))}"
                     )
+
+    @property
+    def queries_dir(self) -> Path:
+        """Pasta das queries customizadas (relativa ao arquivo de configuração)."""
+        folder = Path(self.settings.queriesPath)
+        return folder if folder.is_absolute() else self.base_dir / folder
 
     def describe(self) -> Dict[str, Any]:
         return {
