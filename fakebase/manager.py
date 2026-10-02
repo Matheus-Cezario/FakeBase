@@ -1,4 +1,4 @@
-"""Orquestração: gera os dados falsos e expõe as operações de CRUD."""
+"""Orchestration: generates the fake data and exposes the CRUD operations."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ Document = Dict[str, Any]
 
 @dataclass
 class DatabaseReport:
-    """Resultado da geração de um banco."""
+    """Result of generating one database."""
 
     name: str
     schema: str
@@ -34,7 +34,7 @@ class DatabaseReport:
 
 @dataclass
 class GenerationReport:
-    """Resultado completo de ``fakebase generate``."""
+    """Complete result of ``fakebase generate``."""
 
     databases: List[DatabaseReport] = field(default_factory=list)
     seed: Optional[int] = None
@@ -55,7 +55,7 @@ class GenerationReport:
 
 
 class FakeBase:
-    """Fachada principal: gera os bancos falsos e opera sobre eles."""
+    """Main facade: generates the fake databases and operates on them."""
 
     def __init__(self, config: Config, storage: Optional[MontyStorage] = None):
         self.config = config
@@ -67,10 +67,10 @@ class FakeBase:
             self.faker.seed_instance(self.settings.seed)
 
     # ------------------------------------------------------------------
-    # Geração
+    # Generation
     # ------------------------------------------------------------------
     def generate(self, only: Optional[Sequence[str]] = None, progress=None) -> GenerationReport:
-        """(Re)gera todos os bancos, respeitando as dependências entre eles."""
+        """(Re)generate every database, honoring the dependencies between them."""
         report = GenerationReport(seed=self.settings.seed)
         wanted = set(only) if only else None
         for name in self.generation_order():
@@ -89,18 +89,18 @@ class FakeBase:
         return report
 
     def append(self, name: str, count: int) -> List[Document]:
-        """Gera mais linhas em um banco já existente, sem apagar as atuais."""
+        """Generate more rows in an existing database, without deleting the current ones."""
         schematic = self.schematic_of(name)
         documents = self._build_documents(name, schematic, count, fresh=False)
         self.storage.insert(name, documents)
         return documents
 
     def preview(self, name: str, count: int = 1) -> List[Document]:
-        """Gera linhas de exemplo sem gravar nada."""
+        """Generate sample rows without storing anything."""
         return self._build_documents(name, self.schematic_of(name), count, fresh=False)
 
     def generation_order(self) -> List[str]:
-        """Ordem em que os bancos precisam ser gerados (ordenação topológica)."""
+        """Order in which the databases must be generated (topological sort)."""
         graph = self.dependency_graph()
         order: List[str] = []
         visited: Dict[str, int] = {}
@@ -111,7 +111,7 @@ class FakeBase:
                 return
             if state == 1:
                 chain = " -> ".join([*stack, node])
-                raise LinkError(f"Referência circular entre bancos de dados: {chain}")
+                raise LinkError(f"Circular reference between databases: {chain}")
             visited[node] = 1
             for dependency in sorted(graph.get(node, set())):
                 visit(dependency, (*stack, node))
@@ -123,7 +123,7 @@ class FakeBase:
         return order
 
     def dependency_graph(self) -> Dict[str, set]:
-        """Mapa banco -> bancos que ele referencia."""
+        """Map database -> databases it references."""
         graph: Dict[str, set] = {}
         for spec in self.config.databases:
             schematic = self.config.schematics[spec.schema]
@@ -151,7 +151,7 @@ class FakeBase:
         return documents
 
     def _prime_state(self, name: str, schematic: Schematic, context: GenContext) -> None:
-        """Continua contadores e conjuntos de unicidade a partir do que já existe."""
+        """Resume counters and uniqueness sets from what already exists."""
         if not self.storage.exists(name):
             return
         existing = self.storage.count(name)
@@ -160,8 +160,8 @@ class FakeBase:
             state = context.state.setdefault(scope, {})
             if spec.unique:
                 state["unique"] = set(self.storage.distinct(name, field_name))
-            # 'choice' e 'sequence' sem repetição consomem um pool: os valores
-            # já gravados precisam sair dele antes de gerar mais linhas.
+            # 'choice' and 'sequence' without repetition consume a pool: values
+            # already stored must leave it before generating more rows.
             if spec.method in ("choice", "sequence") and _says_no_repeat(spec.params.get("repeat")):
                 state["exclude"] = _hashable_set(self.storage.distinct(name, field_name))
                 if spec.method == "sequence":
@@ -182,20 +182,20 @@ class FakeBase:
             size = self.rng.randint(*spec.size_range)
         elif limit is not None:
             size = limit
-            notes.append(f"tamanho limitado a {limit} por um gerador sem repetição")
+            notes.append(f"size limited to {limit} by a no-repeat generator")
         else:
             size = self.rng.randint(self.settings.minSize, self.settings.maxSize)
-            notes.append(f"tamanho sorteado entre {self.settings.minSize} e {self.settings.maxSize}")
+            notes.append(f"size drawn between {self.settings.minSize} and {self.settings.maxSize}")
 
         if limit is not None and size > limit:
             notes.append(
-                f"'size' pedia {size}, mas um gerador sem repetição limita a {limit} linhas"
+                f"'size' asked for {size}, but a no-repeat generator limits it to {limit} rows"
             )
             size = limit
         return size, notes
 
     # ------------------------------------------------------------------
-    # Consultas e CRUD
+    # Queries and CRUD
     # ------------------------------------------------------------------
     def database_names(self) -> List[str]:
         return self.config.database_names
@@ -203,8 +203,8 @@ class FakeBase:
     def ensure_database(self, name: str) -> str:
         if name not in self.config.database_names:
             raise NotFoundError(
-                f"Banco de dados '{name}' não existe. "
-                f"Disponíveis: {', '.join(self.config.database_names)}"
+                f"Database '{name}' does not exist. "
+                f"Available: {', '.join(self.config.database_names)}"
             )
         return name
 
@@ -244,7 +244,7 @@ class FakeBase:
         return self.storage.distinct(name, field_name, filter or {})
 
     def create(self, name: str, document: Mapping[str, Any], *, fill: bool = True) -> Document:
-        """Insere um documento; os campos ausentes são gerados pelo schematic."""
+        """Insert a document; missing fields are generated by the schematic."""
         self.ensure_database(name)
         payload: Document = dict(document or {})
         if fill:
@@ -272,7 +272,7 @@ class FakeBase:
         return self.storage.delete(name, filter, every=every)
 
     def load_queries(self) -> List[QueryEndpoint]:
-        """Carrega as queries customizadas da pasta configurada."""
+        """Load the custom queries from the configured folder."""
         return load_queries(
             self.config.queries_dir,
             prefix=self.settings.queriesPrefix,
@@ -308,7 +308,7 @@ class FakeBase:
         }
 
     def export(self, target: Path, *, only: Optional[Sequence[str]] = None, indent: int = 2) -> List[Path]:
-        """Grava cada banco em um arquivo JSON (compatível com a versão 1.x)."""
+        """Write each database to a JSON file (compatible with version 1.x)."""
         target = Path(target)
         target.mkdir(parents=True, exist_ok=True)
         written: List[Path] = []
@@ -323,7 +323,7 @@ class FakeBase:
         return written
 
     def import_json(self, source: Path, *, replace: bool = True) -> Dict[str, int]:
-        """Carrega arquivos JSON (um por banco) para dentro do NoSQL."""
+        """Load JSON files (one per database) into the NoSQL store."""
         source = Path(source)
         files: Iterable[Path]
         if source.is_dir():
@@ -345,18 +345,18 @@ class FakeBase:
 
 
 def _hashable_set(values: Iterable[Any]) -> set:
-    """Conjunto com os valores que podem virar chave; o resto é ignorado."""
+    """Set of the values that can be hashed; the rest is ignored."""
     result = set()
     for value in values:
         try:
             result.add(value)
-        except TypeError:  # listas e dicionários não entram no conjunto
+        except TypeError:  # lists and dicts do not go into the set
             continue
     return result
 
 
 def _says_no_repeat(value: Any) -> bool:
-    """``repeat`` desligado, tanto como ``false`` quanto como ``"false"``."""
+    """``repeat`` turned off, either as ``false`` or as ``"false"``."""
     if isinstance(value, str):
         return value.strip().lower() in ("false", "0", "no", "off", "n")
     return value is False

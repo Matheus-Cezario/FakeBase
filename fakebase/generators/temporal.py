@@ -1,4 +1,4 @@
-"""Geradores de datas, horas e timestamps."""
+"""Date, time and timestamp generators."""
 
 from __future__ import annotations
 
@@ -24,8 +24,8 @@ def _parse(value: str, param: str) -> datetime:
         except ValueError:
             continue
     raise GeneratorError(
-        f"Não foi possível interpretar {param}={value!r}. "
-        f"Formatos aceitos: {', '.join(_INPUT_FORMATS)}"
+        f"Could not parse {param}={value!r}. "
+        f"Accepted formats: {', '.join(_INPUT_FORMATS)}"
     )
 
 
@@ -47,7 +47,7 @@ def _window(
         return past, now
     if mode == "all":
         return past, future
-    raise GeneratorError(f"dateType '{dateType}' inválido. Use past, all ou future.")
+    raise GeneratorError(f"Invalid dateType '{dateType}'. Use past, all or future.")
 
 
 def _random_datetime(ctx: GenContext, begin: datetime, end: datetime) -> datetime:
@@ -59,14 +59,14 @@ def _random_datetime(ctx: GenContext, begin: datetime, end: datetime) -> datetim
 
 @generator(
     "date",
-    category="tempo",
-    doc="Data aleatória formatada.",
+    category="time",
+    doc="Formatted random date.",
     params={
-        "valueFormat": "formato strftime (padrão %d/%m/%Y %H:%M:%S)",
-        "dateType": "past | all | future (padrão all)",
-        "dataRange": "deslocamento máximo em anos (padrão 20)",
-        "start": "data inicial explícita (ex.: 2024-01-01)",
-        "stop": "data final explícita",
+        "valueFormat": "strftime format (default %d/%m/%Y %H:%M:%S)",
+        "dateType": "past | all | future (default all)",
+        "dataRange": "maximum offset in years (default 20)",
+        "start": "explicit start date (e.g. 2024-01-01)",
+        "stop": "explicit end date",
     },
 )
 def date(
@@ -83,14 +83,14 @@ def date(
 
 @generator(
     "isoDate",
-    category="tempo",
-    doc="Data/hora no formato ISO 8601.",
+    category="time",
+    doc="Date/time in ISO 8601 format.",
     params={
-        "dateType": "past | all | future (padrão all)",
-        "dataRange": "deslocamento máximo em anos (padrão 20)",
-        "start": "data inicial explícita",
-        "stop": "data final explícita",
-        "dateOnly": "somente a data, sem hora (padrão false)",
+        "dateType": "past | all | future (default all)",
+        "dataRange": "maximum offset in years (default 20)",
+        "start": "explicit start date",
+        "stop": "explicit end date",
+        "dateOnly": "date only, without time (default false)",
     },
 )
 def iso_date(
@@ -108,14 +108,14 @@ def iso_date(
 
 @generator(
     "timestamp",
-    category="tempo",
+    category="time",
     doc="Timestamp Unix.",
     params={
-        "unit": "s | ms (padrão s)",
-        "dateType": "past | all | future (padrão past)",
-        "dataRange": "deslocamento máximo em anos (padrão 20)",
-        "start": "data inicial explícita",
-        "stop": "data final explícita",
+        "unit": "s | ms (default s)",
+        "dateType": "past | all | future (default past)",
+        "dataRange": "maximum offset in years (default 20)",
+        "start": "explicit start date",
+        "stop": "explicit end date",
     },
 )
 def timestamp(
@@ -134,9 +134,9 @@ def timestamp(
 
 @generator(
     "time",
-    category="tempo",
-    doc="Horário aleatório do dia.",
-    params={"valueFormat": "formato strftime (padrão %H:%M:%S)"},
+    category="time",
+    doc="Random time of day.",
+    params={"valueFormat": "strftime format (default %H:%M:%S)"},
 )
 def time_of_day(ctx: GenContext, valueFormat: str = "%H:%M:%S") -> str:
     moment = datetime(2000, 1, 1) + timedelta(seconds=ctx.rng.randrange(24 * 60 * 60))

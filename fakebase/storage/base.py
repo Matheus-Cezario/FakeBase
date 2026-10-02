@@ -1,7 +1,8 @@
-"""Contrato da camada de persistência.
+"""Persistence layer contract.
 
-A API e o gerador só conversam com esta interface, o que permite trocar o
-banco embutido (MontyDB) por um MongoDB real sem tocar no resto do código.
+The API and the generator only talk to this interface, which makes it
+possible to swap the embedded database (MontyDB) for a real MongoDB without
+touching the rest of the code.
 """
 
 from __future__ import annotations
@@ -12,8 +13,8 @@ Document = Dict[str, Any]
 Sort = Sequence[Tuple[str, int]]
 
 
-class Storage(Protocol):  # pragma: no cover - apenas contrato
-    """Operações mínimas de um backend de documentos."""
+class Storage(Protocol):  # pragma: no cover - contract only
+    """Minimal operations of a document backend."""
 
     def collections(self) -> List[str]:
         ...

@@ -1,124 +1,124 @@
-def test_index_lista_os_bancos(client):
+def test_index_lists_the_databases(client):
     body = client.get("/").json()
     assert body["dataBase"] == ["users", "products"]
     assert body["storage"]["backend"] == "memory"
     assert {d["name"]: d["count"] for d in body["databases"]} == {"users": 6, "products": 10}
 
 
-def test_listagem_simples_devolve_array(client):
+def test_simple_listing_returns_array(client):
     response = client.get("/products")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
     assert response.headers["x-total-count"] == "10"
 
 
-def test_listagem_com_filtro_ordem_projecao_e_limite(client):
-    documentos = client.get(
+def test_listing_with_filter_sort_projection_and_limit(client):
+    documents = client.get(
         "/products", params={"price__gt": 20, "sort": "-price", "fields": "name,price", "limit": 3}
     ).json()
-    assert len(documentos) <= 3
-    assert all(set(d) == {"_id", "name", "price"} for d in documentos)
-    precos = [d["price"] for d in documentos]
-    assert precos == sorted(precos, reverse=True) and all(p > 20 for p in precos)
+    assert len(documents) <= 3
+    assert all(set(d) == {"_id", "name", "price"} for d in documents)
+    prices = [d["price"] for d in documents]
+    assert prices == sorted(prices, reverse=True) and all(p > 20 for p in prices)
 
 
-def test_paginacao_devolve_envelope(client):
+def test_pagination_returns_envelope(client):
     body = client.get("/products", params={"paginate": "true", "pageCount": 4, "page": 2}).json()
     assert body["totalItens"] == 10 and body["totalPages"] == 3
     assert body["page"] == 2 and len(body["value"]) == 4
 
 
-def test_busca_por_id_e_404(client):
-    documento = client.get("/users", params={"limit": 1}).json()[0]
-    assert client.get(f"/users/{documento['_id']}").json()["_id"] == documento["_id"]
+def test_get_by_id_and_404(client):
+    document = client.get("/users", params={"limit": 1}).json()[0]
+    assert client.get(f"/users/{document['_id']}").json()["_id"] == document["_id"]
     assert client.get("/users/nao-existe").status_code == 404
 
 
-def test_post_preenche_os_campos_que_faltam(client):
-    criado = client.post("/users", json={"name": "Ana"}).json()
-    assert criado["name"] == "Ana"
-    assert {"email", "age", "gender", "cart", "_id"} <= set(criado)
-    assert client.get(f"/users/{criado['_id']}").json()["name"] == "Ana"
+def test_post_fills_missing_fields(client):
+    created = client.post("/users", json={"name": "Ana"}).json()
+    assert created["name"] == "Ana"
+    assert {"email", "age", "gender", "cart", "_id"} <= set(created)
+    assert client.get(f"/users/{created['_id']}").json()["name"] == "Ana"
 
 
-def test_post_sem_preenchimento(client):
-    criado = client.post("/users", params={"fill": "false"}, json={"name": "Beto"}).json()
-    assert set(criado) == {"name", "_id"}
+def test_post_without_fill(client):
+    created = client.post("/users", params={"fill": "false"}, json={"name": "Bob"}).json()
+    assert set(created) == {"name", "_id"}
 
 
-def test_post_em_lote(client):
-    criados = client.post("/products", json=[{"name": "A"}, {"name": "B"}]).json()
-    assert [c["name"] for c in criados] == ["A", "B"]
+def test_batch_post(client):
+    created_items = client.post("/products", json=[{"name": "A"}, {"name": "B"}]).json()
+    assert [c["name"] for c in created_items] == ["A", "B"]
     assert client.get("/products/_count").json()["count"] == 12
 
 
-def test_patch_put_delete_por_id(client):
-    documento = client.get("/users", params={"limit": 1}).json()[0]
-    atualizado = client.patch(f"/users/{documento['_id']}", json={"age": 50}).json()
-    assert atualizado["age"] == 50 and atualizado["name"] == documento["name"]
+def test_patch_put_delete_by_id(client):
+    document = client.get("/users", params={"limit": 1}).json()[0]
+    updated = client.patch(f"/users/{document['_id']}", json={"age": 50}).json()
+    assert updated["age"] == 50 and updated["name"] == document["name"]
 
-    substituido = client.put(f"/users/{documento['_id']}", json={"name": "Só isso"}).json()
-    assert substituido == {"_id": documento["_id"], "name": "Só isso"}
+    replaced = client.put(f"/users/{document['_id']}", json={"name": "Just this"}).json()
+    assert replaced == {"_id": document["_id"], "name": "Just this"}
 
-    assert client.delete(f"/users/{documento['_id']}").status_code == 200
-    assert client.get(f"/users/{documento['_id']}").status_code == 404
+    assert client.delete(f"/users/{document['_id']}").status_code == 200
+    assert client.get(f"/users/{document['_id']}").status_code == 404
 
 
-def test_operacoes_em_lote_exigem_filtro(client):
+def test_batch_operations_require_a_filter(client):
     assert client.delete("/users").status_code == 400
     assert client.patch("/users", json={"active": False}).status_code == 400
 
 
-def test_patch_em_lote_por_filtro(client):
-    atualizados = client.patch("/products", params={"price__lt": 1000}, json={"stock": 0}).json()
-    assert len(atualizados) == 10 and all(d["stock"] == 0 for d in atualizados)
+def test_batch_patch_by_filter(client):
+    updated_items = client.patch("/products", params={"price__lt": 1000}, json={"stock": 0}).json()
+    assert len(updated_items) == 10 and all(d["stock"] == 0 for d in updated_items)
 
 
-def test_count_e_distinct(client):
+def test_count_and_distinct(client):
     assert client.get("/users/_count").json()["count"] == 6
     body = client.get("/users/_distinct/gender").json()
     assert set(body["values"]) <= {"male", "female"}
 
 
-def test_generate_acrescenta_documentos(client):
+def test_generate_appends_documents(client):
     body = client.post("/products/_generate", params={"count": 5}).json()
     assert body["created"] == 5
     assert client.get("/products/_count").json()["count"] == 15
 
 
-def test_reset_regenera_o_banco(client):
+def test_reset_regenerates_the_database(client):
     client.delete("/products", params={"price__gt": 0})
     body = client.post("/products/_reset").json()
     assert body["databases"][0]["size"] == 10
     assert client.get("/products/_count").json()["count"] == 10
 
 
-def test_schema_e_stats(client):
+def test_schema_and_stats(client):
     schema = client.get("/_schema/users").json()
     assert schema["fields"]["email"]["unique"] is True
     assert client.get("/_stats").json()["databases"][0]["count"] == 6
     assert client.get("/_schema").json()["product"]["price"]["method"] == "number"
 
 
-def test_generators_documenta_o_catalogo(client):
+def test_generators_documents_the_catalog(client):
     body = client.get("/_generators").json()
-    nomes = {g["name"] for g in body["generators"]}
-    assert {"humanName", "number", "choice"} <= nomes
+    names = {g["name"] for g in body["generators"]}
+    assert {"humanName", "number", "choice"} <= names
     assert any(t["name"] == "currency" for t in body["transforms"])
 
 
-def test_erros_tem_corpo_json(client):
-    resposta = client.get("/naoexiste")
-    assert resposta.status_code == 404 and resposta.json()["type"] == "NotFoundError"
+def test_errors_have_json_body(client):
+    response = client.get("/missing")
+    assert response.status_code == 404 and response.json()["type"] == "NotFoundError"
     assert client.get("/users", params={"age__zzz": 1}).status_code == 400
 
 
-def test_openapi_disponivel(client):
+def test_openapi_available(client):
     assert client.get("/openapi.json").status_code == 200
     assert client.get("/docs").status_code == 200
 
 
-# --- rotas da versão 1.x ----------------------------------------------------
+# --- version 1.x routes ----------------------------------------------------------
 
 
 def test_legacy_list(client):
@@ -126,7 +126,7 @@ def test_legacy_list(client):
     assert body["totalItens"] == 6 and len(body["value"]) == 6
 
 
-def test_legacy_list_com_paginacao_e_filtro(client):
+def test_legacy_list_with_pagination_and_filter(client):
     body = client.get(
         "/list/users", params={"paginate": "true", "pageCount": 2, "page": 1, "gender": "male"}
     ).json()
@@ -139,21 +139,21 @@ def test_legacy_get(client):
     assert client.get("/get/users", params={"gender": "xxx"}).json() == {}
 
 
-def test_legacy_update_e_set(client):
-    documento = client.get("/get/users").json()
-    atualizado = client.post("/update/users", params={"_id": documento["_id"]}, json={"age": 33})
-    assert atualizado.json()[0]["age"] == 33
+def test_legacy_update_and_set(client):
+    document = client.get("/get/users").json()
+    updated = client.post("/update/users", params={"_id": document["_id"]}, json={"age": 33})
+    assert updated.json()[0]["age"] == 33
 
-    substituido = client.post("/set/users", params={"_id": documento["_id"]}, json={"name": "Zé"})
-    assert substituido.json()[0] == {"_id": documento["_id"], "name": "Zé"}
+    replaced = client.post("/set/users", params={"_id": document["_id"]}, json={"name": "Joe"})
+    assert replaced.json()[0] == {"_id": document["_id"], "name": "Joe"}
 
 
-def test_legacy_delete_com_every(client):
-    apagados = client.get("/delete/users", params={"gender": "male", "every": "true"}).json()
-    assert all(d["gender"] == "male" for d in apagados)
+def test_legacy_delete_with_every(client):
+    deleted = client.get("/delete/users", params={"gender": "male", "every": "true"}).json()
+    assert all(d["gender"] == "male" for d in deleted)
     assert client.get("/users/_count", params={"gender": "male"}).json()["count"] == 0
 
 
-def test_legacy_delete_sem_filtro_nao_apaga(client):
+def test_legacy_delete_without_filter_does_not_delete(client):
     assert client.get("/delete/users").status_code == 400
     assert client.get("/users/_count").json()["count"] == 6

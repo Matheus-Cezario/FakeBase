@@ -1,8 +1,8 @@
-"""Geradores de dados pessoais, de contato e de negócio.
+"""Personal, contact and business data generators.
 
-Apoiam-se no `Faker`, o que traz suporte a *locale*: com
-``"Settings": {"locale": "pt_BR"}`` os nomes, cidades e documentos passam a
-ser brasileiros.
+They rely on `Faker`, which brings *locale* support: with
+``"Settings": {"locale": "pt_BR"}`` names, cities and ID numbers become
+Brazilian.
 """
 
 from __future__ import annotations
@@ -21,8 +21,8 @@ def _provider(ctx: GenContext, name: str) -> Any:
     provider = getattr(ctx.faker, name, None)
     if provider is None:
         raise GeneratorError(
-            f"O locale '{getattr(ctx.faker, 'locales', ['?'])[0]}' não oferece '{name}'. "
-            "Troque o locale em Settings ou use outro gerador."
+            f"Locale '{getattr(ctx.faker, 'locales', ['?'])[0]}' does not provide '{name}'. "
+            "Change the locale in Settings or use another generator."
         )
     return provider
 
@@ -32,7 +32,7 @@ def _gender(value: Optional[str]) -> Optional[str]:
         return None
     normalized = _GENDERS.get(str(value).strip().lower())
     if normalized is None:
-        raise GeneratorError(f"gender '{value}' inválido. Use male, female ou null.")
+        raise GeneratorError(f"Invalid gender '{value}'. Use male, female or null.")
     return normalized
 
 
@@ -44,11 +44,11 @@ def slugify(text: str, separator: str = "-") -> str:
 
 @generator(
     "humanName",
-    category="pessoas",
-    doc="Nome de pessoa.",
+    category="people",
+    doc="Person name.",
     params={
-        "gender": "male | female | null (padrão null)",
-        "valueFormat": "lista com 'first' e/ou 'last' (padrão nome completo)",
+        "gender": "male | female | null (default null)",
+        "valueFormat": "list with 'first' and/or 'last' (default full name)",
     },
     aliases=("name",),
 )
@@ -77,31 +77,31 @@ def _name_part(ctx: GenContext, position: str, gender: Optional[str]) -> str:
         return ctx.faker.first_name()
     if position == "last":
         return ctx.faker.last_name()
-    raise GeneratorError(f"valueFormat aceita 'first' e 'last', não {position!r}")
+    raise GeneratorError(f"valueFormat accepts 'first' and 'last', not {position!r}")
 
 
 @generator(
     "firstName",
-    category="pessoas",
-    doc="Primeiro nome.",
+    category="people",
+    doc="First name.",
     params={"gender": "male | female | null"},
 )
 def first_name(ctx: GenContext, gender: Optional[str] = None) -> str:
     return _name_part(ctx, "first", _gender(gender))
 
 
-@generator("lastName", category="pessoas", doc="Sobrenome.")
+@generator("lastName", category="people", doc="Last name.")
 def last_name(ctx: GenContext) -> str:
     return ctx.faker.last_name()
 
 
 @generator(
     "email",
-    category="pessoas",
-    doc="Endereço de e-mail.",
+    category="people",
+    doc="Email address.",
     params={
-        "name": "base do endereço, normalmente '__nomeDoCampo' (opcional)",
-        "domain": "domínio fixo, por exemplo 'empresa.com' (opcional)",
+        "name": "base of the address, usually '__fieldName' (optional)",
+        "domain": "fixed domain, for example 'company.com' (optional)",
     },
 )
 def email(ctx: GenContext, name: Optional[str] = None, domain: Optional[str] = None) -> str:
@@ -113,76 +113,76 @@ def email(ctx: GenContext, name: Optional[str] = None, domain: Optional[str] = N
     return ctx.faker.email()
 
 
-@generator("username", category="pessoas", doc="Nome de usuário.")
+@generator("username", category="people", doc="Username.")
 def username(ctx: GenContext) -> str:
     return ctx.faker.user_name()
 
 
 @generator(
     "password",
-    category="pessoas",
-    doc="Senha aleatória.",
-    params={"length": "quantidade de caracteres (padrão 12)", "special": "usar símbolos (padrão true)"},
+    category="people",
+    doc="Random password.",
+    params={"length": "number of characters (default 12)", "special": "use symbols (default true)"},
 )
 def password(ctx: GenContext, length: int = 12, special: bool = True) -> str:
     return ctx.faker.password(length=max(length, 4), special_chars=special)
 
 
-@generator("phone", category="pessoas", doc="Número de telefone.", aliases=("phoneNumber",))
+@generator("phone", category="people", doc="Phone number.", aliases=("phoneNumber",))
 def phone(ctx: GenContext) -> str:
     return _provider(ctx, "phone_number")()
 
 
-@generator("cpf", category="pessoas", doc="CPF (requer locale pt_BR).")
+@generator("cpf", category="people", doc="CPF (requires locale pt_BR).")
 def cpf(ctx: GenContext) -> str:
     return _provider(ctx, "cpf")()
 
 
-@generator("cnpj", category="pessoas", doc="CNPJ (requer locale pt_BR).")
+@generator("cnpj", category="people", doc="CNPJ (requires locale pt_BR).")
 def cnpj(ctx: GenContext) -> str:
     return _provider(ctx, "cnpj")()
 
 
-@generator("address", category="lugares", doc="Endereço completo em uma linha.")
+@generator("address", category="places", doc="Full address on one line.")
 def address(ctx: GenContext) -> str:
     return " ".join(ctx.faker.address().splitlines())
 
 
-@generator("street", category="lugares", doc="Logradouro.")
+@generator("street", category="places", doc="Street address.")
 def street(ctx: GenContext) -> str:
     return ctx.faker.street_address()
 
 
-@generator("city", category="lugares", doc="Cidade.")
+@generator("city", category="places", doc="City.")
 def city(ctx: GenContext) -> str:
     return ctx.faker.city()
 
 
 @generator(
     "state",
-    category="lugares",
-    doc="Estado/província.",
-    params={"abbr": "usa a sigla, por exemplo RJ (padrão false)"},
+    category="places",
+    doc="State/province.",
+    params={"abbr": "use the abbreviation, for example RJ (default false)"},
 )
 def state(ctx: GenContext, abbr: bool = False) -> str:
     return _provider(ctx, "state_abbr")() if abbr else _provider(ctx, "state")()
 
 
-@generator("country", category="lugares", doc="País.")
+@generator("country", category="places", doc="Country.")
 def country(ctx: GenContext) -> str:
     return ctx.faker.country()
 
 
-@generator("postcode", category="lugares", doc="CEP / código postal.", aliases=("zipCode",))
+@generator("postcode", category="places", doc="Postal code.", aliases=("zipCode",))
 def postcode(ctx: GenContext) -> str:
     return ctx.faker.postcode()
 
 
 @generator(
     "coordinates",
-    category="lugares",
-    doc="Par de coordenadas geográficas.",
-    params={"asObject": "devolve {lat, lng} em vez de lista (padrão true)"},
+    category="places",
+    doc="Pair of geographic coordinates.",
+    params={"asObject": "return {lat, lng} instead of a list (default true)"},
 )
 def coordinates(ctx: GenContext, asObject: bool = True) -> Any:
     lat = round(ctx.rng.uniform(-90, 90), 6)
@@ -190,21 +190,21 @@ def coordinates(ctx: GenContext, asObject: bool = True) -> Any:
     return {"lat": lat, "lng": lng} if asObject else [lat, lng]
 
 
-@generator("company", category="negócios", doc="Nome de empresa.")
+@generator("company", category="business", doc="Company name.")
 def company(ctx: GenContext) -> str:
     return ctx.faker.company()
 
 
-@generator("jobTitle", category="negócios", doc="Cargo/profissão.", aliases=("job",))
+@generator("jobTitle", category="business", doc="Job title.", aliases=("job",))
 def job_title(ctx: GenContext) -> str:
     return ctx.faker.job()
 
 
 @generator(
     "creditCard",
-    category="negócios",
-    doc="Número de cartão de crédito fictício.",
-    params={"cardType": "visa, mastercard, amex... (opcional)", "brandOnly": "devolve só a bandeira"},
+    category="business",
+    doc="Fake credit card number.",
+    params={"cardType": "visa, mastercard, amex... (optional)", "brandOnly": "return only the brand"},
 )
 def credit_card(ctx: GenContext, cardType: Optional[str] = None, brandOnly: bool = False) -> str:
     if brandOnly:
@@ -214,12 +214,12 @@ def credit_card(ctx: GenContext, cardType: Optional[str] = None, brandOnly: bool
 
 @generator(
     "faker",
-    category="avançado",
-    doc="Executa qualquer provider do Faker pelo nome.",
+    category="advanced",
+    doc="Run any Faker provider by name.",
     params={
-        "provider": "nome do provider, por exemplo 'iban' ou 'license_plate'",
-        "args": "lista de argumentos posicionais (opcional)",
-        "kwargs": "dicionário de argumentos nomeados (opcional)",
+        "provider": "provider name, for example 'iban' or 'license_plate'",
+        "args": "list of positional arguments (optional)",
+        "kwargs": "dictionary of keyword arguments (optional)",
     },
 )
 def faker_provider(
@@ -229,9 +229,9 @@ def faker_provider(
     kwargs: Optional[dict] = None,
 ) -> Any:
     if not provider:
-        raise GeneratorError("O parâmetro 'provider' é obrigatório no gerador 'faker'")
+        raise GeneratorError("Parameter 'provider' is required by generator 'faker'")
     if provider.startswith("_"):
-        raise GeneratorError(f"Provider '{provider}' não é público")
+        raise GeneratorError(f"Provider '{provider}' is not public")
     target = _provider(ctx, provider)
     if not callable(target):
         return target

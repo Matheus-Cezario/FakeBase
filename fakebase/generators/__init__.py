@@ -1,7 +1,7 @@
-"""Registro de geradores de valores do FakeBase.
+"""Registry of FakeBase value generators.
 
-Importar este pacote registra todos os geradores embutidos. Para adicionar
-um gerador próprio basta decorar uma função com :func:`generator`.
+Importing this package registers every built-in generator. To add your own
+generator, decorate a function with :func:`generator`.
 """
 
 from .base import (  # noqa: F401
@@ -17,7 +17,7 @@ from .base import (  # noqa: F401
     resolve_path,
 )
 
-# Importar estes módulos registra os geradores embutidos no REGISTRY.
+# Importing these modules registers the built-in generators in REGISTRY.
 from . import people, primitives, sequences, temporal, text
 
 BUILTIN_MODULES = (primitives, sequences, temporal, people, text)

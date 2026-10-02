@@ -1,4 +1,4 @@
-"""API HTTP do FakeBase."""
+"""FakeBase HTTP API."""
 
 from .app import create_app
 
@@ -6,7 +6,7 @@ __all__ = ["create_app", "serve"]
 
 
 def serve(fakebase, host: str = None, port: int = None) -> None:
-    """Sobe o servidor com uvicorn."""
+    """Start the server with uvicorn."""
     import uvicorn
 
     settings = fakebase.settings

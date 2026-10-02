@@ -1,78 +1,78 @@
 # FakeBase
 
-Gera bancos de dados falsos a partir de um único arquivo JSON e serve tudo por uma
-API REST — para prototipar telas, popular ambientes de teste ou demonstrar um app
-sem depender de backend nenhum.
+Generates fake databases from a single JSON file and serves everything through a
+REST API — to prototype screens, seed test environments or demo an app without
+depending on any backend.
 
-Na versão 2 os dados deixaram de morar em arquivos `.json` soltos e passaram a
-viver em um **NoSQL embutido** ([MontyDB](https://github.com/davidlatwe/montydb)),
-que fala a linguagem de consulta do MongoDB sem exigir servidor: é só uma pasta no
-disco. Com isso as rotas ganharam filtros de verdade (`price__gt`, `name__like`,
-`sort`, projeção, paginação) e o CRUD passou a ser realmente CRUD — agora com
-`POST` para criar.
+In version 2 the data stopped living in loose `.json` files and moved into an
+**embedded NoSQL store** ([MontyDB](https://github.com/davidlatwe/montydb)),
+which speaks the MongoDB query language without needing a server: it is just a
+folder on disk. As a result the routes gained real filters (`price__gt`,
+`name__like`, `sort`, projection, pagination) and CRUD became real CRUD — now
+with `POST` to create.
 
 ```bash
 pip install -r requirements.txt
-python -m fakebase init          # cria um config.fakebase.json de exemplo
-python -m fakebase start         # gera os dados e sobe a API
+python -m fakebase init          # creates an example config.fakebase.json
+python -m fakebase start         # generates the data and starts the API
 ```
 
 ```
-http://localhost:8080/           lista os bancos
-http://localhost:8080/docs       documentação interativa (Swagger)
+http://localhost:8080/           lists the databases
+http://localhost:8080/docs       interactive documentation (Swagger)
 http://localhost:8080/users?age__gt=30&sort=-age&limit=5
 ```
 
 ---
 
-## Sumário
+## Contents
 
-- [O que mudou na versão 2](#o-que-mudou-na-versão-2)
-- [Instalação](#instalação)
-- [Comandos](#comandos)
-- [API HTTP](#api-http)
-  - [Rotas REST](#rotas-rest)
-  - [Filtros e operadores](#filtros-e-operadores)
-  - [Paginação, ordenação e projeção](#paginação-ordenação-e-projeção)
-  - [Rotas da versão 1.x](#rotas-da-versão-1x)
-- [Queries customizadas](#queries-customizadas)
-- [Arquivo de configuração](#arquivo-de-configuração)
+- [What changed in version 2](#what-changed-in-version-2)
+- [Installation](#installation)
+- [Commands](#commands)
+- [HTTP API](#http-api)
+  - [REST routes](#rest-routes)
+  - [Filters and operators](#filters-and-operators)
+  - [Pagination, sorting and projection](#pagination-sorting-and-projection)
+  - [Version 1.x routes](#version-1x-routes)
+- [Custom queries](#custom-queries)
+- [Configuration file](#configuration-file)
   - [Settings](#settings)
   - [Schematics](#schematics)
   - [DataBase](#database)
-- [Geradores](#geradores)
+- [Generators](#generators)
 - [Transforms](#transforms)
-- [Ligação entre campos](#ligação-entre-campos)
-- [Ligação entre bancos de dados](#ligação-entre-bancos-de-dados)
-- [Onde os dados ficam](#onde-os-dados-ficam)
-- [Testes](#testes)
-- [Migrando da versão 1.x](#migrando-da-versão-1x)
+- [Linking fields](#linking-fields)
+- [Linking databases](#linking-databases)
+- [Where the data lives](#where-the-data-lives)
+- [Tests](#tests)
+- [Migrating from version 1.x](#migrating-from-version-1x)
 
 ---
 
-## O que mudou na versão 2
+## What changed in version 2
 
-| Antes (1.x) | Agora (2.0) |
+| Before (1.x) | Now (2.0) |
 | --- | --- |
-| Um arquivo JSON por banco, lido e reescrito inteiro a cada requisição | NoSQL embutido (MontyDB sobre SQLite), consultado documento a documento |
-| Filtros só por igualdade | Operadores `gt`, `gte`, `lt`, `lte`, `ne`, `in`, `nin`, `like`, `start`, `end`, `regex`, `exists`, `size` |
-| Sem ordenação, sem projeção | `sort=-price`, `fields=name,price`, `limit`, `skip` |
-| Sem criação de registros | `POST /users` — e os campos que faltam são gerados pelo schematic |
-| CherryPy | FastAPI, com Swagger em `/docs` e OpenAPI em `/openapi.json` |
-| 10 geradores | 59 geradores, com locale (`pt_BR` gera CPF, CEP, cidades e nomes brasileiros) |
-| 1 transform (`currency`) | 32 transforms encadeáveis |
-| Condições avaliadas com `eval()` | Analisador próprio, sem executar código do arquivo de configuração |
-| Dados diferentes a cada execução | `seed` opcional: mesma semente, mesmos dados |
-| Erros como `AssertionError` | Mensagens explicando o que está errado e o que é aceito |
+| One JSON file per database, read and rewritten in full on every request | Embedded NoSQL (MontyDB on SQLite), queried document by document |
+| Equality-only filters | Operators `gt`, `gte`, `lt`, `lte`, `ne`, `in`, `nin`, `like`, `start`, `end`, `regex`, `exists`, `size` |
+| No sorting, no projection | `sort=-price`, `fields=name,price`, `limit`, `skip` |
+| No record creation | `POST /users` — and missing fields are generated by the schematic |
+| CherryPy | FastAPI, with Swagger at `/docs` and OpenAPI at `/openapi.json` |
+| 10 generators | 59 generators, with locale support (`pt_BR` generates Brazilian CPF, CEP, cities and names) |
+| 1 transform (`currency`) | 32 chainable transforms |
+| Conditions evaluated with `eval()` | Custom parser, no code from the configuration file is executed |
+| Different data on every run | Optional `seed`: same seed, same data |
+| Errors as `AssertionError` | Messages explaining what is wrong and what is accepted |
 
-As rotas antigas (`/list`, `/get`, `/update`, `/set`, `/delete`) continuam
-funcionando, com o mesmo formato de resposta.
+The old routes (`/list`, `/get`, `/update`, `/set`, `/delete`) keep working,
+with the same response format.
 
 ---
 
-## Instalação
+## Installation
 
-Requer Python 3.9 ou mais novo.
+Requires Python 3.9 or newer.
 
 ```bash
 python -m venv .venv
@@ -81,125 +81,126 @@ source .venv/bin/activate      # Linux/macOS
 pip install -r requirements.txt
 ```
 
-Também dá para instalar como pacote e ganhar o comando `fakebase`:
+You can also install it as a package and get the `fakebase` command:
 
 ```bash
 pip install -e .
 fakebase --help
 ```
 
-Todos os exemplos abaixo usam `fakebase`; sem instalar, troque por
-`python -m fakebase` (ou `python FakeBase.py`, que continua funcionando).
+Every example below uses `fakebase`; without installing, replace it with
+`python -m fakebase` (or `python FakeBase.py`, which still works).
 
 ---
 
-## Comandos
+## Commands
 
 ```
-fakebase [OPÇÕES GLOBAIS] COMANDO [ARGUMENTOS]
+fakebase [GLOBAL OPTIONS] COMMAND [ARGUMENTS]
 ```
 
-| Comando | O que faz |
+| Command | What it does |
 | --- | --- |
-| `generate` | Gera (ou regenera) todos os bancos. `--only users` limita, `--export pasta` também salva JSONs, `--json` imprime o relatório em JSON |
-| `serve` | Sobe a API sobre os dados já gerados. `--host`, `--port`, `--latency 300` (atraso artificial em ms) |
+| `generate` | Generates (or regenerates) every database. `--only users` limits it, `--export folder` also saves JSON files, `--json` prints the report as JSON |
+| `serve` | Starts the API over the already generated data. `--host`, `--port`, `--latency 300` (artificial delay in ms) |
 | `start` | `generate` + `serve` |
-| `list` | Mostra cada banco e quantos documentos tem |
-| `preview users -n 3` | Mostra linhas de exemplo sem gravar nada — ótimo para ajustar um schematic |
-| `validate` | Confere a configuração (inclusive as queries) e mostra a ordem de geração |
-| `queries` | Lista as [queries customizadas](#queries-customizadas) e as rotas que criam. `--json` |
-| `generators` | Lista os geradores e seus parâmetros. `--search cpf`, `--transforms` |
-| `export pasta` | Salva cada banco em um `.json` (formato da versão 1.x) |
-| `import pasta` | Carrega arquivos `.json` para dentro do NoSQL. `--append` mantém o que já existe |
-| `drop users` | Apaga os dados de um banco (`--all` para todos) |
-| `init` | Cria um `config.fakebase.json` de exemplo |
+| `list` | Shows each database and how many documents it has |
+| `preview users -n 3` | Shows sample rows without storing anything — great for tuning a schematic |
+| `validate` | Checks the configuration (including the queries) and shows the generation order |
+| `queries` | Lists the [custom queries](#custom-queries) and the routes they create. `--json` |
+| `generators` | Lists the generators and their parameters. `--search cpf`, `--transforms` |
+| `export folder` | Saves each database to a `.json` file (version 1.x format) |
+| `import folder` | Loads `.json` files into the NoSQL store. `--append` keeps what already exists |
+| `drop users` | Deletes the data of a database (`--all` for every one) |
+| `init` | Creates an example `config.fakebase.json` |
 
-Opções globais:
+Global options:
 
-| Opção | Padrão | Descrição |
+| Option | Default | Description |
 | --- | --- | --- |
-| `-c`, `--config`, `--path` | `./config.fakebase.json` | Arquivo de configuração |
-| `--storage-path`, `--fakepath` | `./.fakebase` | Pasta onde o NoSQL guarda os dados |
-| `--storage` | `sqlite` | `sqlite`, `flatfile` ou `memory` |
-| `--seed` | — | Semente aleatória: mesma semente, mesmos dados |
-| `--locale` | `pt_BR` | Locale dos dados falsos (`en_US`, `es_ES`, `fr_FR`, ...) |
-| `--queries` | `./queries` | Pasta das queries customizadas |
+| `-c`, `--config`, `--path` | `./config.fakebase.json` | Configuration file |
+| `--storage-path`, `--fakepath` | `./.fakebase` | Folder where the NoSQL store keeps the data |
+| `--storage` | `sqlite` | `sqlite`, `flatfile` or `memory` |
+| `--seed` | — | Random seed: same seed, same data |
+| `--locale` | `pt_BR` | Locale of the fake data (`en_US`, `es_ES`, `fr_FR`, ...) |
+| `--queries` | `./queries` | Custom queries folder |
 
 ---
 
-## API HTTP
+## HTTP API
 
-### Rotas REST
+### REST routes
 
-Cada banco declarado em `DataBase` vira um recurso. Para um banco chamado `users`:
+Every database declared in `DataBase` becomes a resource. For a database named `users`:
 
-| Método e rota | O que faz |
+| Method and route | What it does |
 | --- | --- |
-| `GET /users` | Lista documentos (aceita filtros, ordenação, projeção e paginação) |
-| `GET /users/{id}` | Busca por `_id`; devolve 404 se não existir |
-| `POST /users` | Cria um documento. Os campos ausentes são **gerados pelo schematic**; use `?fill=false` para gravar só o que veio no corpo. O corpo também pode ser uma lista |
-| `PATCH /users/{id}` | Atualiza os campos informados |
-| `PUT /users/{id}` | Substitui o documento inteiro (o `_id` é preservado) |
-| `DELETE /users/{id}` | Apaga o documento |
-| `PATCH /users?filtro` | Atualiza em lote (exige ao menos um filtro) |
-| `DELETE /users?filtro` | Apaga em lote (exige ao menos um filtro) |
-| `GET /users/_count` | Conta documentos, com os mesmos filtros da listagem |
-| `GET /users/_distinct/{campo}` | Valores distintos de um campo |
-| `POST /users/_generate?count=10` | Gera mais documentos falsos e acrescenta ao banco |
-| `POST /users/_reset` | Regenera o banco do zero |
+| `GET /users` | Lists documents (accepts filters, sorting, projection and pagination) |
+| `GET /users/{id}` | Gets by `_id`; returns 404 if it does not exist |
+| `POST /users` | Creates a document. Missing fields are **generated by the schematic**; use `?fill=false` to store only what came in the body. The body may also be a list |
+| `PATCH /users/{id}` | Updates the given fields |
+| `PUT /users/{id}` | Replaces the whole document (the `_id` is kept) |
+| `DELETE /users/{id}` | Deletes the document |
+| `PATCH /users?filter` | Batch update (requires at least one filter) |
+| `DELETE /users?filter` | Batch delete (requires at least one filter) |
+| `GET /users/_count` | Counts documents, with the same filters as the listing |
+| `GET /users/_distinct/{field}` | Distinct values of a field |
+| `POST /users/_generate?count=10` | Generates more fake documents and appends them to the database |
+| `POST /users/_reset` | Regenerates the database from scratch |
 
-Rotas de metadados:
+Metadata routes:
 
-| Rota | Conteúdo |
+| Route | Content |
 | --- | --- |
-| `GET /` | Bancos, contagens e onde os dados estão |
-| `GET /_schema` e `GET /_schema/{banco}` | Os schematics, já normalizados |
-| `GET /_stats` | Quantidade de documentos por banco |
-| `GET /_generators` | Catálogo de geradores e transforms |
+| `GET /` | Databases, counts and where the data lives |
+| `GET /_schema` and `GET /_schema/{database}` | The schematics, already normalized |
+| `GET /_stats` | Document count per database |
+| `GET /_generators` | Catalog of generators and transforms |
+| `GET /_queries` | Loaded custom queries |
 | `GET /docs` | Swagger UI |
 
-### Filtros e operadores
+### Filters and operators
 
-Qualquer parâmetro que não seja reservado vira filtro. Use `campo__operador`:
+Any parameter that is not reserved becomes a filter. Use `field__operator`:
 
 ```
 GET /products?price__gt=40&price__lte=80
-GET /products?name__like=arroz
-GET /products?tags__in=novo,importado
+GET /products?name__like=rice
+GET /products?tags__in=new,imported
 GET /users?nickname__exists=false
-GET /orders?status__ne=cancelado
+GET /orders?status__ne=cancelled
 ```
 
-| Operador | Significado |
+| Operator | Meaning |
 | --- | --- |
-| (nenhum) | igual |
-| `ne` | diferente |
-| `gt`, `gte`, `lt`, `lte` | maior / maior ou igual / menor / menor ou igual |
-| `in`, `nin` | está / não está na lista (separada por vírgula) |
-| `like`, `contains`, `ilike` | contém o texto (ignora maiúsculas) |
-| `start`, `end` | começa / termina com |
-| `regex` | expressão regular |
-| `exists` | o campo existe |
-| `size` | tamanho exato de uma lista |
-| `all` | a lista contém todos os valores |
+| (none) | equal |
+| `ne` | not equal |
+| `gt`, `gte`, `lt`, `lte` | greater / greater or equal / less / less or equal |
+| `in`, `nin` | is / is not in the (comma-separated) list |
+| `like`, `contains`, `ilike` | contains the text (case-insensitive) |
+| `start`, `end` | starts / ends with |
+| `regex` | regular expression |
+| `exists` | the field exists |
+| `size` | exact length of a list |
+| `all` | the list contains every value |
 
-Valores são convertidos automaticamente: `30` vira número, `true`/`false` viram
-booleanos, `null` vira nulo. Repetir o mesmo campo combina as condições com `E`
-lógico (`?price__gt=10&price__gt=20`).
+Values are converted automatically: `30` becomes a number, `true`/`false` become
+booleans, `null` becomes null. Repeating the same field combines the conditions
+with a logical AND (`?price__gt=10&price__gt=20`).
 
-### Paginação, ordenação e projeção
+### Pagination, sorting and projection
 
-| Parâmetro | Efeito |
+| Parameter | Effect |
 | --- | --- |
-| `sort=-price,name` | Ordena por preço decrescente e depois por nome |
-| `fields=name,price` | Devolve só esses campos (o `_id` vem junto) |
-| `exclude=cart` | Devolve tudo menos esses campos |
-| `limit=10&skip=20` | Recorte simples |
-| `paginate=true&page=2&pageCount=5` | Paginação com metadados na resposta |
-| `every=true` | Nas rotas de atualização/remoção em lote da versão 1.x, aplica a todos |
+| `sort=-price,name` | Sorts by price descending, then by name |
+| `fields=name,price` | Returns only these fields (the `_id` comes along) |
+| `exclude=cart` | Returns everything except these fields |
+| `limit=10&skip=20` | Simple slice |
+| `paginate=true&page=2&pageCount=5` | Pagination with metadata in the response |
+| `every=true` | In the version 1.x batch update/delete routes, applies to every match |
 
-Sem `paginate`, a listagem devolve um array puro e o total vai no cabeçalho
-`X-Total-Count`. Com `paginate=true`, a resposta vem em envelope:
+Without `paginate`, the listing returns a plain array and the total goes in the
+`X-Total-Count` header. With `paginate=true`, the response comes in an envelope:
 
 ```json
 {
@@ -212,11 +213,13 @@ Sem `paginate`, a listagem devolve um array puro e o total vai no cabeçalho
 }
 ```
 
-### Rotas da versão 1.x
+(`totalItens` is kept for compatibility with version 1.x clients.)
 
-Continuam disponíveis e com o mesmo formato de antes:
+### Version 1.x routes
 
-| Rota | Equivalente novo |
+Still available, with the same format as before:
+
+| Route | New equivalent |
 | --- | --- |
 | `GET /list/users` | `GET /users?paginate=true` |
 | `GET /get/users?gender=male` | `GET /users?gender=male&limit=1` |
@@ -224,15 +227,15 @@ Continuam disponíveis e com o mesmo formato de antes:
 | `GET|POST /set/users?_id=...` | `PUT /users/{id}` |
 | `GET|DELETE /delete/users?_id=...` | `DELETE /users/{id}` |
 
-Uma diferença importante: `update`, `set` e `delete` agora **exigem pelo menos um
-filtro**. Sem filtro, a resposta é `400` e nenhum documento é tocado.
+One important difference: `update`, `set` and `delete` now **require at least
+one filter**. Without a filter, the response is `400` and no document is touched.
 
 ---
 
-## Queries customizadas
+## Custom queries
 
-Escreva consultas em SQL, salve em arquivos `.sql` dentro da pasta `queries/` e
-cada arquivo vira um endpoint. As subpastas entram na URL:
+Write queries in SQL, save them as `.sql` files inside the `queries/` folder and
+each file becomes an endpoint. Subfolders become part of the URL:
 
 ```
 queries/
@@ -243,18 +246,18 @@ queries/
   products/reports/low-stock.sql  GET    /queries/products/reports/low-stock
 ```
 
-- `index.sql` responde pela URL da própria pasta.
-- `[nome]` (em arquivo ou pasta) vira um parâmetro de caminho.
-- O que vem depois do primeiro ponto do nome é ignorado na URL: assim
-  `index.sql` e `index.create.sql` atendem a mesma URL com métodos diferentes.
-- Dois arquivos com o mesmo método na mesma URL são um erro na inicialização.
+- `index.sql` answers for the folder's own URL.
+- `[name]` (in a file or folder) becomes a path parameter.
+- Anything after the first dot of the name is ignored in the URL, so
+  `index.sql` and `index.create.sql` serve the same URL with different methods.
+- Two files with the same method on the same URL are a startup error.
 
-A **primeira linha** do arquivo é um comentário com o método HTTP: `-- GET`,
-`-- POST`, `-- PUT` ou `-- DELETE`. O texto depois do método e os outros
-comentários do topo viram o resumo e a descrição da rota no Swagger (`/docs`).
+The **first line** of the file is a comment with the HTTP method: `-- GET`,
+`-- POST`, `-- PUT` or `-- DELETE`. The text after the method and the other
+comments at the top become the route summary and description in Swagger (`/docs`).
 
 ```sql
--- GET Usuários ativos, com filtros opcionais
+-- GET Active users, with optional filters
 -- @param city = null
 -- @param minAge int = 0
 -- @param limit int = 20
@@ -271,105 +274,106 @@ LIMIT :limit
 GET /queries/users?minAge=30&city=%25Rio%25
 ```
 
-### Parâmetros
+### Parameters
 
-`:nome` na query é um parâmetro nomeado. O valor vem, nesta ordem de
-prioridade, do caminho da URL (`[id]`), do corpo JSON (em `POST`, `PUT` e
-`DELETE`) e da query string. Parâmetros sem valor e sem padrão respondem `400`.
+`:name` in the query is a named parameter. Its value comes, in this order of
+priority, from the URL path (`[id]`), the JSON body (in `POST`, `PUT` and
+`DELETE`) and the query string. Parameters without a value and without a default
+respond with `400`.
 
-Valores da URL passam pela mesma conversão dos filtros (`30` vira número,
-`true` vira booleano). Para controlar o tipo ou dar um valor padrão, declare no
-topo do arquivo:
+URL values go through the same conversion as filters (`30` becomes a number,
+`true` becomes a boolean). To control the type or set a default value, declare it
+at the top of the file:
 
-| Declaração | Efeito |
+| Declaration | Effect |
 | --- | --- |
-| `-- @param id string` | sempre texto, mesmo que o valor pareça um número |
-| `-- @param limit int = 20` | inteiro, opcional, padrão 20 |
-| `-- @param city = null` | opcional; com `null` o filtro opcional fica desligado |
-| `-- @param tags list` | lista: `?tags=a,b` ou `?tags=a&tags=b` |
+| `-- @param id string` | always text, even if the value looks like a number |
+| `-- @param limit int = 20` | integer, optional, default 20 |
+| `-- @param city = null` | optional; with `null` the optional filter is turned off |
+| `-- @param tags list` | list: `?tags=a,b` or `?tags=a&tags=b` |
 
-Tipos: `auto` (padrão), `string`, `int`, `float`, `number`, `bool`, `list`, `json`.
+Types: `auto` (default), `string`, `int`, `float`, `number`, `bool`, `list`, `json`.
 
-Como os parâmetros são resolvidos antes de consultar o banco, condições que só
-envolvem parâmetros viram constantes. É assim que `(:city IS NULL OR ...)`
-funciona como filtro opcional.
+Because parameters are resolved before querying the database, conditions that
+only involve parameters become constants. That is how `(:city IS NULL OR ...)`
+works as an optional filter.
 
-### SQL suportado
+### Supported SQL
 
-Uma instrução por arquivo; cada tabela é um banco do `DataBase`.
+One statement per file; each table is a database from `DataBase`.
 
-| Instrução | Forma |
+| Statement | Form |
 | --- | --- |
-| `SELECT` | `SELECT * \| col [AS apelido], ... \| COUNT(*) [AS apelido] FROM banco [WHERE ...] [ORDER BY col [ASC\|DESC], ...] [LIMIT n] [OFFSET n]` |
-| `INSERT` | `INSERT INTO banco (col, ...) VALUES (valor, ...), (...)` |
-| `UPDATE` | `UPDATE banco SET col = valor, estoque = estoque - :qtd [WHERE ...]` |
-| `DELETE` | `DELETE FROM banco [WHERE ...]` |
+| `SELECT` | `SELECT * \| col [AS alias], ... \| COUNT(*) [AS alias] FROM database [WHERE ...] [ORDER BY col [ASC\|DESC], ...] [LIMIT n] [OFFSET n]` |
+| `INSERT` | `INSERT INTO database (col, ...) VALUES (value, ...), (...)` |
+| `UPDATE` | `UPDATE database SET col = value, stock = stock - :qty [WHERE ...]` |
+| `DELETE` | `DELETE FROM database [WHERE ...]` |
 
-No `WHERE`: `=`, `!=`/`<>`, `<`, `<=`, `>`, `>=`, `[NOT] LIKE`/`ILIKE` (`%` e `_`,
-sem diferenciar maiúsculas), `[NOT] IN (1, 2)` ou `IN :lista`,
-`[NOT] BETWEEN a AND b`, `IS [NOT] NULL`, `AND`, `OR`, `NOT` e parênteses. Um
-campo sozinho (`WHERE active`) equivale a `active = true`. Campos aninhados
-usam ponto (`address.city`). Comparar dois campos entre si, `JOIN` e
-`GROUP BY` não são suportados.
+In `WHERE`: `=`, `!=`/`<>`, `<`, `<=`, `>`, `>=`, `[NOT] LIKE`/`ILIKE` (`%` and `_`,
+case-insensitive), `[NOT] IN (1, 2)` or `IN :list`, `[NOT] BETWEEN a AND b`,
+`IS [NOT] NULL`, `AND`, `OR`, `NOT` and parentheses. A bare field
+(`WHERE active`) is the same as `active = true`. Nested fields use a dot
+(`address.city`). Comparing two fields with each other, `JOIN` and `GROUP BY` are
+not supported.
 
-`UPDATE` e `DELETE` sem `WHERE` afetam todos os documentos do banco — diferente
-das rotas REST, aqui a query é escrita de propósito.
+`UPDATE` and `DELETE` without `WHERE` affect every document in the database —
+unlike the REST routes, here the query is written on purpose.
 
-### Respostas
+### Responses
 
-| Instrução | Status | Corpo |
+| Statement | Status | Body |
 | --- | --- | --- |
-| `SELECT` | 200 | lista de documentos |
+| `SELECT` | 200 | list of documents |
 | `SELECT COUNT(*) AS total` | 200 | `{"total": 42}` |
 | `INSERT` | 201 | `{"database": "users", "inserted": 1, "value": [...]}` |
 | `UPDATE` | 200 | `{"database": "users", "updated": 3, "value": [...]}` |
 | `DELETE` | 200 | `{"database": "users", "deleted": 3, "value": [...]}` |
 
-Diretivas no topo do arquivo:
+Directives at the top of the file:
 
-- `-- @one` devolve só o primeiro documento (ou `404` se não houver nenhum),
-  em vez da lista ou do envelope — ideal para rotas `[id]`.
-- `-- @fill false` faz o `INSERT` gravar só as colunas informadas. Por padrão,
-  como no `POST /users`, os campos que faltam são gerados pelo schematic.
+- `-- @one` returns only the first document (or `404` if there is none) instead
+  of the list or envelope — ideal for `[id]` routes.
+- `-- @fill false` makes `INSERT` store only the given columns. By default, as in
+  `POST /users`, missing fields are generated by the schematic.
 
-As queries são lidas quando o servidor sobe: depois de criar ou alterar um
-arquivo, reinicie o `serve`. Erros (método ausente, SQL inválido, banco
-inexistente, rota duplicada) aparecem na inicialização indicando o arquivo, e
-`fakebase validate` faz a mesma checagem sem subir o servidor. A rota
-`GET /_queries` lista as queries carregadas.
+Queries are read when the server starts: after creating or changing a file,
+restart `serve`. Errors (missing method, invalid SQL, missing database, duplicate
+route) show up at startup naming the file, and `fakebase validate` runs the same
+check without starting the server. The `GET /_queries` route lists the loaded
+queries.
 
 ---
 
-## Arquivo de configuração
+## Configuration file
 
 ```jsonc
 {
-  "Settings":   { /* ajustes globais, opcional */ },
-  "Schematics": { /* como cada tipo de registro é montado */ },
-  "DataBase":   { /* quais bancos existem e de que tamanho */ }
+  "Settings":   { /* global settings, optional */ },
+  "Schematics": { /* how each kind of record is built */ },
+  "DataBase":   { /* which databases exist and how big they are */ }
 }
 ```
 
 ### Settings
 
-| Campo | Padrão | Descrição |
+| Field | Default | Description |
 | --- | --- | --- |
-| `locale` | `pt_BR` | Idioma/país dos dados falsos |
-| `seed` | — | Semente aleatória; sem ela cada execução gera dados diferentes |
-| `storage` | `sqlite` | Backend do NoSQL: `sqlite`, `flatfile` ou `memory` |
-| `storagePath` | `./.fakebase` | Pasta dos dados |
-| `database` | `fakebase` | Nome do banco dentro do NoSQL |
-| `idGenerator` | `objectId` | Gerador usado para o `_id` automático |
-| `minSize` / `maxSize` | `10` / `50` | Faixa do tamanho sorteado quando o banco não declara `size` |
-| `host` / `port` | `127.0.0.1` / `8080` | Endereço do servidor |
-| `cors` | `true` | Libera CORS (útil para front-ends locais) |
-| `latency` | `0` | Atraso artificial por requisição, em ms |
-| `queriesPath` | `./queries` | Pasta das [queries customizadas](#queries-customizadas), relativa ao arquivo de configuração |
-| `queriesPrefix` | `/queries` | Prefixo das URLs das queries (`""` para não usar prefixo) |
+| `locale` | `pt_BR` | Language/country of the fake data |
+| `seed` | — | Random seed; without it every run generates different data |
+| `storage` | `sqlite` | NoSQL backend: `sqlite`, `flatfile` or `memory` |
+| `storagePath` | `./.fakebase` | Data folder |
+| `database` | `fakebase` | Database name inside the NoSQL store |
+| `idGenerator` | `objectId` | Generator used for the automatic `_id` |
+| `minSize` / `maxSize` | `10` / `50` | Range of the random size when the database does not declare `size` |
+| `host` / `port` | `127.0.0.1` / `8080` | Server address |
+| `cors` | `true` | Enables CORS (useful for local front-ends) |
+| `latency` | `0` | Artificial delay per request, in ms |
+| `queriesPath` | `./queries` | [Custom queries](#custom-queries) folder, relative to the configuration file |
+| `queriesPrefix` | `/queries` | URL prefix of the queries (`""` for no prefix) |
 
 ### Schematics
 
-Um schematic é um conjunto de campos. Cada campo aponta para um gerador:
+A schematic is a set of fields. Each field points to a generator:
 
 ```json
 {
@@ -382,17 +386,17 @@ Um schematic é um conjunto de campos. Cada campo aponta para um gerador:
 }
 ```
 
-- `"campo": "nomeDoGerador"` usa o gerador com os padrões dele.
-- `"campo": { "method": "...", ... }` permite passar parâmetros.
-- Um texto que não seja nome de gerador vira **valor fixo**: `"pais": "Brasil"`.
+- `"field": "generatorName"` uses the generator with its defaults.
+- `"field": { "method": "...", ... }` lets you pass parameters.
+- A string that is not a generator name becomes a **fixed value**: `"country": "Brazil"`.
 
-Além dos parâmetros do gerador, todo campo aceita:
+Besides the generator parameters, every field accepts:
 
-| Chave | Efeito |
+| Key | Effect |
 | --- | --- |
-| `transform` | Aplica um ou mais [transforms](#transforms) ao valor gerado |
-| `unique` | Garante que o valor não se repita dentro do banco |
-| `nullable` | Probabilidade (0 a 1) de o campo vir `null` |
+| `transform` | Applies one or more [transforms](#transforms) to the generated value |
+| `unique` | Ensures the value does not repeat within the database |
+| `nullable` | Probability (0 to 1) of the field being `null` |
 
 ```json
 "email":   { "method": "email", "name": "__name", "unique": true },
@@ -400,8 +404,8 @@ Além dos parâmetros do gerador, todo campo aceita:
 "price":   { "method": "number", "start": 10, "stop": 90, "transform": ["round", "currency"] }
 ```
 
-Todo schematic ganha um `_id` automático (um `objectId`, único) caso você não
-declare um.
+Every schematic gets an automatic `_id` (a unique `objectId`) unless you
+declare one.
 
 ### DataBase
 
@@ -415,62 +419,62 @@ declare um.
 }
 ```
 
-- `size` fixa a quantidade de linhas; `[min, max]` sorteia dentro do intervalo.
-- Sem `size`, o tamanho é sorteado entre `minSize` e `maxSize`.
-- Se algum campo usar um gerador sem repetição (`repeat: false`), o tamanho é
-  limitado pela quantidade de valores disponíveis — e o `generate` avisa.
-- O nome do banco é o caminho da rota: `users` → `/users`.
+- `size` fixes the number of rows; `[min, max]` draws one within the range.
+- Without `size`, the size is drawn between `minSize` and `maxSize`.
+- If a field uses a no-repeat generator (`repeat: false`), the size is limited by
+  the number of available values — and `generate` warns about it.
+- The database name is the route path: `users` → `/users`.
 
 ---
 
-## Geradores
+## Generators
 
-`fakebase generators` lista tudo com os parâmetros; `GET /_generators` devolve o
-mesmo catálogo em JSON.
+`fakebase generators` lists everything with its parameters; `GET /_generators`
+returns the same catalog as JSON.
 
-**Pessoas** — `humanName` (`gender`, `valueFormat`), `firstName`, `lastName`,
+**People** — `humanName` (`gender`, `valueFormat`), `firstName`, `lastName`,
 `email` (`name`, `domain`), `username`, `password`, `phone`, `cpf`, `cnpj`.
 
-**Lugares** — `address`, `street`, `city`, `state` (`abbr`), `country`,
+**Places** — `address`, `street`, `city`, `state` (`abbr`), `country`,
 `postcode`, `coordinates`.
 
-**Negócios** — `company`, `jobTitle`, `creditCard`, `currencyCode`.
+**Business** — `company`, `jobTitle`, `creditCard`, `currencyCode`.
 
-**Números** — `number` (`start`, `stop`, `numberType`, `precision`, `step`),
+**Numbers** — `number` (`start`, `stop`, `numberType`, `precision`, `step`),
 `integer`, `boolean` (`chance`).
 
-**Tempo** — `date` (`valueFormat`, `dateType`, `dataRange`, `start`, `stop`),
+**Time** — `date` (`valueFormat`, `dateType`, `dataRange`, `start`, `stop`),
 `isoDate`, `timestamp`, `time`.
 
-**Texto** — `word`, `sentence`, `paragraph`, `text`, `slug`, `template`
-(interpola campos da própria linha), `pattern` (máscara: `#` dígito, `?` letra
-minúscula, `!` maiúscula).
+**Text** — `word`, `sentence`, `paragraph`, `text`, `slug`, `template`
+(interpolates fields of the same row), `pattern` (mask: `#` digit, `?` lower-case
+letter, `!` upper-case letter).
 
-**Listas** — `choice` (`data`, `repeat`, `weights`), `chooseSeveral`
+**Lists** — `choice` (`data`, `repeat`, `weights`), `chooseSeveral`
 (`minValue`, `maxValue`, `size`), `sequence`, `numericSequence`,
 `randomSequence`, `shuffle`.
 
-**Identificadores** — `objectId`, `uuid`, `randID` (`IDType`, `size`, `prefix`),
+**Identifiers** — `objectId`, `uuid`, `randID` (`IDType`, `size`, `prefix`),
 `autoIncrement`.
 
-**Estruturas** — `object` (campos aninhados), `array` (lista de valores gerados).
+**Structures** — `object` (nested fields), `array` (list of generated values).
 
-**Web e mídia** — `url`, `domain`, `ipv4`, `ipv6`, `macAddress`, `userAgent`,
+**Web and media** — `url`, `domain`, `ipv4`, `ipv6`, `macAddress`, `userAgent`,
 `color`, `imageUrl`, `fileName`, `mimeType`.
 
-**Avançado** — `faker`, que abre todos os *providers* do Faker:
+**Advanced** — `faker`, which opens up every Faker *provider*:
 
 ```json
-"placa": { "method": "faker", "provider": "license_plate" },
+"plate": { "method": "faker", "provider": "license_plate" },
 "iban":  { "method": "faker", "provider": "iban" }
 ```
 
-O parâmetro `data` de `choice`, `chooseSeveral`, `sequence`, `randomSequence` e
-`shuffle` aceita três formas: uma lista literal, o caminho de um arquivo de texto
-(um valor por linha, como `productsName.txt`) ou uma
-[referência a outro banco](#ligação-entre-bancos-de-dados).
+The `data` parameter of `choice`, `chooseSeveral`, `sequence`, `randomSequence`
+and `shuffle` accepts three forms: a literal list, the path of a text file (one
+value per line, like `productsName.txt`) or a
+[reference to another database](#linking-databases).
 
-Objetos e listas aninhados:
+Nested objects and lists:
 
 ```json
 "address": {
@@ -488,8 +492,8 @@ Objetos e listas aninhados:
 
 ## Transforms
 
-Transforms rodam depois do gerador. Podem ser um nome, um objeto com parâmetros ou
-uma lista aplicada em sequência:
+Transforms run after the generator. They can be a name, an object with parameters
+or a list applied in sequence:
 
 ```json
 "price": {
@@ -498,20 +502,20 @@ uma lista aplicada em sequência:
 }
 ```
 
-**Texto** — `upper`, `lower`, `title`, `capitalize`, `trim`, `prefix`, `suffix`,
+**Text** — `upper`, `lower`, `title`, `capitalize`, `trim`, `prefix`, `suffix`,
 `replace`, `truncate`, `pad`, `hide`, `slug`.
-**Números** — `round`, `floor`, `ceil`, `abs`, `multiply`, `currency`, `toInt`,
+**Numbers** — `round`, `floor`, `ceil`, `abs`, `multiply`, `currency`, `toInt`,
 `toFloat`, `toString`, `toBool`.
-**Datas e listas** — `dateFormat`, `join`, `split`, `unique`, `sort`, `length`,
+**Dates and lists** — `dateFormat`, `join`, `split`, `unique`, `sort`, `length`,
 `pluck`, `sum`, `jsonString`.
 
-`fakebase generators --transforms` mostra os parâmetros de cada um.
+`fakebase generators --transforms` shows the parameters of each one.
 
 ---
 
-## Ligação entre campos
+## Linking fields
 
-Um campo pode usar o valor de outro campo da mesma linha com o prefixo `__`:
+A field can use the value of another field of the same row with the `__` prefix:
 
 ```json
 {
@@ -521,21 +525,21 @@ Um campo pode usar o valor de outro campo da mesma linha com o prefixo `__`:
 }
 ```
 
-O FakeBase resolve a ordem sozinho — `gender` é gerado antes de `name`, mesmo
-aparecendo depois. Dependências circulares são detectadas e reportadas com o
-caminho completo.
+FakeBase works out the order by itself — `gender` is generated before `name`,
+even though it appears later. Circular dependencies are detected and reported
+with the full path.
 
 ---
 
-## Ligação entre bancos de dados
+## Linking databases
 
-Um campo pode buscar dados de outro banco com a sintaxe:
+A field can fetch data from another database with the syntax:
 
 ```
-@banco:campos:condições:quantidade@
+@database:fields:conditions:count@
 ```
 
-Só o nome do banco é obrigatório; as outras partes podem ficar vazias.
+Only the database name is required; the other parts may be left empty.
 
 ```json
 "cart": {
@@ -546,91 +550,90 @@ Só o nome do banco é obrigatório; as outras partes podem ficar vazias.
 }
 ```
 
-| Parte | Formas aceitas |
+| Part | Accepted forms |
 | --- | --- |
-| `campos` | vazio (documento inteiro), `name` (lista de valores desse campo), `[name,price]` (lista de objetos) |
-| `condições` | `price<50`, `price<50 and stock>0`, `status==pago,ativo` (lista = "um destes"), `name~=bata` (contém), `or` também funciona |
-| `quantidade` | vazio ou `all` (todos), `3` (sorteia 3 por linha), `[1,4]` (sorteia entre 1 e 4) |
+| `fields` | empty (whole document), `name` (list of that field's values), `[name,price]` (list of objects) |
+| `conditions` | `price<50`, `price<50 and stock>0`, `status==paid,active` (list = "one of these"), `name~=bata` (contains); `or` also works |
+| `count` | empty or `all` (every one), `3` (draws 3 per row), `[1,4]` (draws between 1 and 4) |
 
 ```
-"@products@"                      todos os produtos
-"@products:name@"                 só os nomes, como lista de textos
-"@products:_id::3@"               três ids diferentes para cada linha
-"@users:[_id,name]:active==true@" usuários ativos, com dois campos
+"@products@"                      every product
+"@products:name@"                 only the names, as a list of strings
+"@products:_id::3@"               three different ids for each row
+"@users:[_id,name]:active==true@" active users, with two fields
 ```
 
-A ordem de geração é deduzida das referências (`products` antes de `users`), e
-referências circulares entre bancos são detectadas antes de qualquer coisa ser
-gerada.
+The generation order is inferred from the references (`products` before
+`users`), and circular references between databases are detected before anything
+is generated.
 
-> **Mudança em relação à 1.x:** a quantidade é sorteada **por linha**, então cada
-> registro recebe uma seleção diferente; antes o sorteio valia para o banco todo.
-> E `@products:name@` agora devolve `["Arroz", "Feijão"]` em vez de
-> `[{"name": "Arroz"}, ...]` — para objetos, use `[name]`.
+> **Change from 1.x:** the count is drawn **per row**, so each record gets a
+> different selection; before, the draw applied to the whole database.
+> And `@products:name@` now returns `["Arroz", "Feijão"]` instead of
+> `[{"name": "Arroz"}, ...]` — for objects, use `[name]`.
 
 ---
 
-## Onde os dados ficam
+## Where the data lives
 
-Por padrão, em `./.fakebase` (SQLite, gerenciado pelo MontyDB). A pasta pode ser
-apagada à vontade: `fakebase generate` reconstrói tudo.
+By default, in `./.fakebase` (SQLite, managed by MontyDB). The folder can be
+deleted at will: `fakebase generate` rebuilds everything.
 
-- `--storage sqlite` — padrão, um arquivo por coleção dentro da pasta.
-- `--storage flatfile` — arquivos de texto, mais fáceis de inspecionar.
-- `--storage memory` — nada é gravado; útil em testes e demonstrações.
+- `--storage sqlite` — default, one file per collection inside the folder.
+- `--storage flatfile` — text files, easier to inspect.
+- `--storage memory` — nothing is written; useful for tests and demos.
 
-Precisa dos JSONs do jeito antigo? `fakebase export ./fakeBase` gera um arquivo
-por banco, no mesmo formato `{"users": [...]}` da versão 1.x. E `fakebase import`
-faz o caminho de volta.
+Need the old-style JSON files? `fakebase export ./fakeBase` writes one file per
+database, in the same `{"users": [...]}` format as version 1.x. And
+`fakebase import` goes the other way.
 
-Como o MontyDB implementa a API do PyMongo, trocar o armazenamento por um MongoDB
-de verdade é questão de substituir o cliente em `fakebase/storage/monty.py`; o
-resto do código conversa apenas com a interface descrita em
-`fakebase/storage/base.py`.
+Since MontyDB implements the PyMongo API, switching the storage to a real MongoDB
+is a matter of replacing the client in `fakebase/storage/monty.py`; the rest of
+the code only talks to the interface described in `fakebase/storage/base.py`.
 
 ---
 
-## Testes
+## Tests
 
 ```bash
 pip install -r requirements.txt
 python -m pytest
 ```
 
-A suíte cobre consultas, geradores, transforms, schematics, referências entre
-bancos, persistência, CLI, todas as rotas HTTP (inclusive as da versão 1.x) e as queries customizadas.
+The suite covers queries, generators, transforms, schematics, cross-database
+references, persistence, the CLI, every HTTP route (including the version 1.x
+ones) and the custom queries.
 
 ---
 
-## Migrando da versão 1.x
+## Migrating from version 1.x
 
-1. Seu `config.fakebase.json` continua válido. Se quiser, acrescente um bloco
-   `Settings` com `locale` e `seed`.
-2. `--fakepath` agora aponta para a pasta do NoSQL, não para uma pasta de JSONs.
-   Para continuar gerando os arquivos, use `fakebase generate --export ./fakeBase`.
-3. Os arquivos `.json` antigos podem ser recarregados com
-   `fakebase import ./fakeBase`.
-4. Referências entre bancos: reveja o formato dos campos (`name` versus `[name]`),
-   conforme a nota acima.
-5. As rotas antigas continuam funcionando; as de escrita passaram a exigir filtro.
+1. Your `config.fakebase.json` is still valid. If you like, add a `Settings`
+   block with `locale` and `seed`.
+2. `--fakepath` now points to the NoSQL folder, not to a folder of JSON files.
+   To keep generating the files, use `fakebase generate --export ./fakeBase`.
+3. The old `.json` files can be loaded back with `fakebase import ./fakeBase`.
+4. Cross-database references: review the format of the fields (`name` versus
+   `[name]`), as in the note above.
+5. The old routes keep working; the write routes now require a filter.
 
 ---
 
-## Estrutura do projeto
+## Project structure
 
 ```
 fakebase/
-  cli.py            comandos de linha de comando
-  config.py         leitura e validação do config.fakebase.json
-  schematic.py      montagem de uma linha, com dependências entre campos
-  references.py     referências @banco:campos:condições:quantidade@
-  manager.py        orquestração: ordem de geração, tamanhos, CRUD, import/export
-  query.py          query string -> filtro no dialeto MongoDB
-  sql.py            subconjunto de SQL -> filtros e operações do MongoDB
-  queries.py        queries customizadas: arquivos .sql -> endpoints
+  cli.py            command-line commands
+  config.py         loading and validation of config.fakebase.json
+  schematic.py      building a row, with dependencies between fields
+  references.py     @database:fields:conditions:count@ references
+  manager.py        orchestration: generation order, sizes, CRUD, import/export
+  query.py          query string -> MongoDB-dialect filter
+  sql.py            SQL subset -> MongoDB filters and operations
+  queries.py        custom queries: .sql files -> endpoints
   pipes.py          transforms
-  generators/       catálogo de geradores de valores
-  storage/          interface de persistência + implementação MontyDB
-  api/              aplicação FastAPI
-tests/              suíte pytest
+  generators/       catalog of value generators
+  storage/          persistence interface + MontyDB implementation
+  api/              FastAPI application
+tests/              pytest suite
 ```

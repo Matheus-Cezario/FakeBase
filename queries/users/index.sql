@@ -1,4 +1,4 @@
--- GET Usuários ativos, com filtros opcionais
+-- GET Active users, with optional filters
 -- @param city = null
 -- @param minAge int = 0
 -- @param limit int = 20

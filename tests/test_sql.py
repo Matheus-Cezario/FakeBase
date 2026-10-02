@@ -9,27 +9,27 @@ def where(text, **params):
     return build_filter(statement.where, params)
 
 
-def test_select_completo():
+def test_full_select():
     query = parse(
-        "SELECT name, address.city AS cidade FROM users "
-        "WHERE age >= :idade ORDER BY age DESC, name LIMIT :limite OFFSET 5;"
+        "SELECT name, address.city AS city FROM users "
+        "WHERE age >= :age ORDER BY age DESC, name LIMIT :limit OFFSET 5;"
     )
     statement = query.statement
     assert isinstance(statement, Select)
     assert statement.collection == "users"
-    assert [(c.path, c.alias) for c in statement.columns] == [("name", None), ("address.city", "cidade")]
+    assert [(c.path, c.alias) for c in statement.columns] == [("name", None), ("address.city", "city")]
     assert statement.order == [("age", -1), ("name", 1)]
-    assert query.params == ["idade", "limite"]
+    assert query.params == ["age", "limit"]
 
 
-def test_comparacoes_viram_operadores_do_mongo():
+def test_comparisons_become_mongo_operators():
     assert where("age > 30") == {"age": {"$gt": 30}}
     assert where("30 < age") == {"age": {"$gt": 30}}
     assert where("name <> 'Ana'") == {"name": {"$ne": "Ana"}}
     assert where("active") == {"active": {"$eq": True}}
 
 
-def test_and_or_not_e_parenteses():
+def test_and_or_not_and_parentheses():
     assert where("age > 1 AND (name = 'a' OR name = 'b')") == {
         "$and": [
             {"age": {"$gt": 1}},
@@ -48,40 +48,40 @@ def test_like_in_between_is_null():
     assert where("email IS NOT NULL") == {"email": {"$ne": None}}
 
 
-def test_parametros_permitem_filtros_opcionais():
-    texto = "(:nome IS NULL OR name = :nome) AND (:idade IS NULL OR age >= :idade)"
-    assert where(texto, nome=None, idade=None) == {}
-    assert where(texto, nome="Ana", idade=None) == {"name": {"$eq": "Ana"}}
+def test_params_allow_optional_filters():
+    text = "(:name IS NULL OR name = :name) AND (:age IS NULL OR age >= :age)"
+    assert where(text, name=None, age=None) == {}
+    assert where(text, name="Ana", age=None) == {"name": {"$eq": "Ana"}}
     assert where("1 = 2") == MATCH_NOTHING
 
 
-def test_insert_e_update():
-    insert = parse("INSERT INTO users (name, age) VALUES (:nome, 30), ('Bia', -1)").statement
+def test_insert_and_update():
+    insert = parse("INSERT INTO users (name, age) VALUES (:name, 30), ('Bia', -1)").statement
     assert isinstance(insert, Insert)
     assert insert.columns == ["name", "age"]
     assert len(insert.rows) == 2
 
-    update = parse("UPDATE products SET stock = stock - :qtd, name = 'x' WHERE _id = :id").statement
+    update = parse("UPDATE products SET stock = stock - :qty, name = 'x' WHERE _id = :id").statement
     assert isinstance(update, Update)
     assert [(a.path, a.kind, a.sign) for a in update.assignments] == [("stock", "inc", -1), ("name", "set", 1)]
 
 
-def test_like_to_regex_escapa_o_resto():
+def test_like_to_regex_escapes_the_rest():
     assert like_to_regex("a.b_%") == r"^a\.b..*$"
 
 
 @pytest.mark.parametrize(
-    "texto, trecho",
+    "text, fragment",
     [
-        ("SELEC * FROM x", "SELECT, INSERT, UPDATE ou DELETE"),
-        ("SELECT * FROM users WHERE", "Esperado um valor"),
-        ("SELECT * FROM users; DELETE FROM users", "só uma instrução"),
-        ("INSERT INTO users (a, b) VALUES (1)", "lista de colunas tem 2"),
-        ("UPDATE users SET a = b + 1", "próprio campo"),
-        ("SELECT * FROM users WHERE a = b", "dois campos"),
+        ("SELEC * FROM x", "SELECT, INSERT, UPDATE or DELETE"),
+        ("SELECT * FROM users WHERE", "Expected a value"),
+        ("SELECT * FROM users; DELETE FROM users", "only one statement"),
+        ("INSERT INTO users (a, b) VALUES (1)", "column list has 2"),
+        ("UPDATE users SET a = b + 1", "field itself"),
+        ("SELECT * FROM users WHERE a = b", "two fields"),
     ],
 )
-def test_erros_explicam_o_problema(texto, trecho):
-    with pytest.raises(QueryError, match=trecho):
-        statement = parse(texto).statement
+def test_errors_explain_the_problem(text, fragment):
+    with pytest.raises(QueryError, match=fragment):
+        statement = parse(text).statement
         build_filter(getattr(statement, "where", None), {})

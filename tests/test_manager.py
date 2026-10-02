@@ -11,66 +11,66 @@ from fakebase.references import parse_reference
 from conftest import BASE_CONFIG, build_config
 
 
-def test_ordem_de_geracao_segue_as_referencias(fakebase):
+def test_generation_order_follows_references(fakebase):
     assert fakebase.generation_order() == ["products", "users"]
 
 
-def test_geracao_cria_os_documentos(fakebase):
+def test_generation_creates_documents(fakebase):
     assert fakebase.count("users") == 6
     assert fakebase.count("products") == 10
 
 
-def test_referencia_entre_bancos_traz_dados_reais(fakebase):
-    precos = {p["price"] for p in fakebase.storage.find("products", {})}
+def test_cross_database_reference_brings_real_data(fakebase):
+    prices = {p["price"] for p in fakebase.storage.find("products", {})}
     for user in fakebase.storage.find("users", {}):
         for item in user["cart"]:
             assert set(item) == {"name", "price"}
-            assert item["price"] < 50 and item["price"] in precos
+            assert item["price"] < 50 and item["price"] in prices
 
 
-def test_semente_torna_a_geracao_reproduzivel(tmp_path):
-    def gerar():
+def test_seed_makes_generation_reproducible(tmp_path):
+    def generate():
         instance = FakeBase(build_config(tmp_path))
         instance.generate()
         documents = instance.storage.find("users", {})
         instance.close()
         return json.dumps(documents, sort_keys=True, default=str)
 
-    assert gerar() == gerar()
+    assert generate() == generate()
 
 
-def test_sementes_diferentes_geram_dados_diferentes(tmp_path):
-    def gerar(seed):
+def test_different_seeds_generate_different_data(tmp_path):
+    def generate(seed):
         instance = FakeBase(build_config(tmp_path, seed=seed))
         instance.generate()
         documents = instance.storage.find("users", {})
         instance.close()
         return json.dumps(documents, sort_keys=True, default=str)
 
-    assert gerar(1) != gerar(2)
+    assert generate(1) != generate(2)
 
 
-def test_campo_unique_nao_repete(fakebase):
+def test_unique_field_does_not_repeat(fakebase):
     emails = [u["email"] for u in fakebase.storage.find("users", {})]
     assert len(emails) == len(set(emails))
 
 
-def test_append_continua_contador_e_unicidade(fakebase):
-    antes = fakebase.storage.find("users", {})
+def test_append_resumes_counter_and_uniqueness(fakebase):
+    before = fakebase.storage.find("users", {})
     fakebase.append("users", 4)
-    depois = fakebase.storage.find("users", {})
-    assert len(depois) == len(antes) + 4
-    assert len({d["_id"] for d in depois}) == len(depois)
-    assert len({d["seq"] for d in depois}) == len(depois)
+    after = fakebase.storage.find("users", {})
+    assert len(after) == len(before) + 4
+    assert len({d["_id"] for d in after}) == len(after)
+    assert len({d["seq"] for d in after}) == len(after)
 
 
-def test_preview_nao_grava(fakebase):
-    antes = fakebase.count("products")
+def test_preview_does_not_store(fakebase):
+    before = fakebase.count("products")
     assert len(fakebase.preview("products", 3)) == 3
-    assert fakebase.count("products") == antes
+    assert fakebase.count("products") == before
 
 
-def test_tamanho_limitado_por_gerador_sem_repeticao(tmp_path):
+def test_size_limited_by_no_repeat_generator(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
     raw["Schematics"]["tag"] = {"name": {"method": "choice", "data": ["a", "b", "c"], "repeat": False}}
     raw["DataBase"]["tags"] = {"schema": "tag", "size": 99}
@@ -82,7 +82,7 @@ def test_tamanho_limitado_por_gerador_sem_repeticao(tmp_path):
     instance.close()
 
 
-def test_tamanho_em_intervalo(tmp_path):
+def test_size_range(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
     raw["DataBase"]["users"] = {"schema": "user", "size": [3, 5]}
     instance = FakeBase(Config.from_dict(raw, path=tmp_path / "c.json"))
@@ -92,85 +92,85 @@ def test_tamanho_em_intervalo(tmp_path):
     instance.close()
 
 
-def test_crud_completo(fakebase):
-    criado = fakebase.create("users", {"name": "Fulano"})
-    assert criado["name"] == "Fulano" and "email" in criado
+def test_full_crud(fakebase):
+    created = fakebase.create("users", {"name": "John"})
+    assert created["name"] == "John" and "email" in created
 
-    atualizado = fakebase.update("users", {"_id": criado["_id"]}, {"age": 41})
-    assert atualizado[0]["age"] == 41 and atualizado[0]["name"] == "Fulano"
+    updated = fakebase.update("users", {"_id": created["_id"]}, {"age": 41})
+    assert updated[0]["age"] == 41 and updated[0]["name"] == "John"
 
-    substituido = fakebase.replace("users", {"_id": criado["_id"]}, {"name": "Outro"})
-    assert substituido[0] == {"_id": criado["_id"], "name": "Outro"}
+    replaced = fakebase.replace("users", {"_id": created["_id"]}, {"name": "Other"})
+    assert replaced[0] == {"_id": created["_id"], "name": "Other"}
 
-    apagado = fakebase.delete("users", {"_id": criado["_id"]})
-    assert apagado[0]["name"] == "Outro"
-    assert fakebase.get_by_id("users", criado["_id"]) is None
-
-
-def test_update_nao_troca_o_id(fakebase):
-    documento = fakebase.storage.find("users", {}, limit=1)[0]
-    fakebase.update("users", {"_id": documento["_id"]}, {"_id": "hackeado", "age": 30})
-    assert fakebase.get_by_id("users", "hackeado") is None
-    assert fakebase.get_by_id("users", documento["_id"])["age"] == 30
+    deleted = fakebase.delete("users", {"_id": created["_id"]})
+    assert deleted[0]["name"] == "Other"
+    assert fakebase.get_by_id("users", created["_id"]) is None
 
 
-def test_delete_sem_every_afeta_um_documento(fakebase):
-    antes = fakebase.count("users")
-    apagados = fakebase.delete("users", {}, every=False)
-    assert len(apagados) == 1 and fakebase.count("users") == antes - 1
+def test_update_does_not_change_the_id(fakebase):
+    document = fakebase.storage.find("users", {}, limit=1)[0]
+    fakebase.update("users", {"_id": document["_id"]}, {"_id": "hacked", "age": 30})
+    assert fakebase.get_by_id("users", "hacked") is None
+    assert fakebase.get_by_id("users", document["_id"])["age"] == 30
 
 
-def test_lista_com_filtro_ordem_e_pagina(fakebase):
+def test_delete_without_every_affects_one_document(fakebase):
+    before = fakebase.count("users")
+    deleted = fakebase.delete("users", {}, every=False)
+    assert len(deleted) == 1 and fakebase.count("users") == before - 1
+
+
+def test_list_with_filter_sort_and_page(fakebase):
     options = ListOptions.from_query({"sort": "-price", "paginate": "true", "pageCount": "4"})
-    documentos, total = fakebase.list("products", options)
-    assert total == 10 and len(documentos) == 4
-    precos = [d["price"] for d in documentos]
-    assert precos == sorted(precos, reverse=True)
+    documents, total = fakebase.list("products", options)
+    assert total == 10 and len(documents) == 4
+    prices = [d["price"] for d in documents]
+    assert prices == sorted(prices, reverse=True)
 
 
-def test_banco_inexistente(fakebase):
+def test_missing_database(fakebase):
     with pytest.raises(NotFoundError):
-        fakebase.count("naoexiste")
+        fakebase.count("missing")
 
 
-def test_export_e_import(fakebase, tmp_path):
-    destino = tmp_path / "saida"
-    arquivos = fakebase.export(destino)
-    assert {p.name for p in arquivos} == {"users.json", "products.json"}
-    conteudo = json.loads((destino / "users.json").read_text(encoding="utf-8"))
-    assert len(conteudo["users"]) == 6
+def test_export_and_import(fakebase, tmp_path):
+    target = tmp_path / "output"
+    files = fakebase.export(target)
+    assert {p.name for p in files} == {"users.json", "products.json"}
+    content = json.loads((target / "users.json").read_text(encoding="utf-8"))
+    assert len(content["users"]) == 6
 
     fakebase.storage.drop("users")
     assert fakebase.count("users") == 0
-    carregado = fakebase.import_json(destino / "users.json")
-    assert carregado == {"users": 6}
+    loaded = fakebase.import_json(target / "users.json")
+    assert loaded == {"users": 6}
     assert fakebase.count("users") == 6
 
 
-def test_stats_lista_todos_os_bancos(fakebase):
+def test_stats_lists_every_database(fakebase):
     stats = fakebase.stats()
     assert {d["name"] for d in stats["databases"]} == {"users", "products"}
     assert all(d["generated"] for d in stats["databases"])
 
 
-def test_referencia_circular_entre_bancos(tmp_path):
+def test_circular_reference_between_databases(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
-    raw["Schematics"]["product"]["dono"] = {"method": "choice", "data": "@users:name@"}
+    raw["Schematics"]["product"]["owner"] = {"method": "choice", "data": "@users:name@"}
     instance = FakeBase(Config.from_dict(raw, path=tmp_path / "c.json"))
     with pytest.raises(LinkError):
         instance.generation_order()
     instance.close()
 
 
-def test_referencia_para_banco_inexistente(tmp_path):
+def test_reference_to_missing_database(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
-    raw["Schematics"]["user"]["x"] = {"method": "choice", "data": "@fantasma:name@"}
+    raw["Schematics"]["user"]["x"] = {"method": "choice", "data": "@ghost:name@"}
     with pytest.raises(ConfigError):
         Config.from_dict(raw, path=tmp_path / "c.json")
 
 
 @pytest.mark.parametrize(
-    "texto,esperado",
+    "text,expected",
     [
         ("@products@", ("products", None, None, None)),
         ("@products:name@", ("products", None, "name", None)),
@@ -178,17 +178,17 @@ def test_referencia_para_banco_inexistente(tmp_path):
         ("@products:name:price<50@", ("products", None, "name", "price<50")),
     ],
 )
-def test_parse_reference(texto, esperado):
-    reference = parse_reference(texto)
+def test_parse_reference(text, expected):
+    reference = parse_reference(text)
     assert (
         reference.database,
         reference.fields,
         reference.single_field,
         reference.conditions,
-    ) == esperado
+    ) == expected
 
 
-def test_parse_reference_quantidade():
+def test_parse_reference_count():
     assert parse_reference("@p:_id::3@").count == 3
     assert parse_reference("@p:_id::all@").count == "all"
     assert parse_reference("@p:_id::[1,4]@").count == (1, 4)
@@ -196,7 +196,7 @@ def test_parse_reference_quantidade():
         parse_reference("@p:_id::x@")
 
 
-def test_append_respeita_repeat_false(tmp_path):
+def test_append_honors_repeat_false(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
     raw["Schematics"]["tag"] = {
         "name": {"method": "choice", "data": ["a", "b", "c", "d"], "repeat": False}
@@ -205,12 +205,12 @@ def test_append_respeita_repeat_false(tmp_path):
     instance = FakeBase(Config.from_dict(raw, path=tmp_path / "c.json"))
     instance.generate()
     instance.append("tags", 2)
-    nomes = [d["name"] for d in instance.storage.find("tags", {})]
-    assert sorted(nomes) == ["a", "b", "c", "d"]
+    names = [d["name"] for d in instance.storage.find("tags", {})]
+    assert sorted(names) == ["a", "b", "c", "d"]
     instance.close()
 
 
-def test_append_continua_sequence(tmp_path):
+def test_append_resumes_sequence(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
     raw["Schematics"]["tag"] = {
         "name": {"method": "sequence", "data": ["a", "b", "c", "d"], "repeat": False}

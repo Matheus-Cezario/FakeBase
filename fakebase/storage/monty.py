@@ -1,8 +1,8 @@
-"""Persistência em NoSQL embutido, usando MontyDB.
+"""Embedded NoSQL persistence, using MontyDB.
 
-MontyDB implementa a API e a linguagem de consulta do MongoDB sobre um
-arquivo local (SQLite por padrão) — sem servidor, sem daemon, só uma pasta.
-O mesmo código roda contra um MongoDB de verdade trocando o cliente.
+MontyDB implements the MongoDB API and query language on top of a local file
+(SQLite by default) — no server, no daemon, just a folder. The same code runs
+against a real MongoDB by swapping the client.
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ STORAGE_BACKENDS = ("sqlite", "flatfile", "memory")
 
 
 class MontyStorage:
-    """Adaptador do MontyDB para o contrato :class:`~fakebase.storage.base.Storage`."""
+    """MontyDB adapter for the :class:`~fakebase.storage.base.Storage` contract."""
 
     def __init__(
         self,
@@ -34,12 +34,12 @@ class MontyStorage:
 
         if backend not in STORAGE_BACKENDS:
             raise StorageError(
-                f"Backend '{backend}' inválido. Use um de: {', '.join(STORAGE_BACKENDS)}"
+                f"Invalid backend '{backend}'. Use one of: {', '.join(STORAGE_BACKENDS)}"
             )
 
         self.backend = backend
         self.database_name = database
-        #: quando ``True``, consultar uma coleção inexistente levanta erro
+        #: when ``True``, querying a missing collection raises an error
         self.strict = strict
 
         if backend == "memory":
@@ -53,14 +53,14 @@ class MontyStorage:
 
         try:
             self._client = MontyClient(repository)
-        except Exception as exc:  # pragma: no cover - falha de ambiente
-            raise StorageError(f"Não foi possível abrir o banco em {self.path}: {exc}") from exc
+        except Exception as exc:  # pragma: no cover - environment failure
+            raise StorageError(f"Could not open the database at {self.path}: {exc}") from exc
         self._db = self._client[database]
 
     # ------------------------------------------------------------------
     def _collection(self, name: str):
         if self.strict and name not in self.collections():
-            raise NotFoundError(f"Banco de dados '{name}' não existe")
+            raise NotFoundError(f"Database '{name}' does not exist")
         return self._db[name]
 
     def collections(self) -> List[str]:
@@ -112,10 +112,10 @@ class MontyStorage:
     def update(
         self, collection: str, filter: Document, changes: Document, *, every: bool = False
     ) -> List[Document]:
-        """Atualiza apenas os campos informados e devolve os documentos novos.
+        """Update only the given fields and return the updated documents.
 
-        ``changes`` pode ser um documento simples (vira ``$set``) ou já usar
-        operadores de atualização, como ``{"$set": {...}, "$inc": {...}}``.
+        ``changes`` may be a plain document (becomes ``$set``) or already use
+        update operators, such as ``{"$set": {...}, "$inc": {...}}``.
         """
         targets = self._targets(collection, filter, every)
         if not targets:
@@ -136,7 +136,7 @@ class MontyStorage:
     def replace(
         self, collection: str, filter: Document, document: Document, *, every: bool = False
     ) -> List[Document]:
-        """Troca o documento inteiro, preservando o ``_id`` original."""
+        """Replace the whole document, keeping the original ``_id``."""
         targets = self._targets(collection, filter, every)
         if not targets:
             return []
@@ -165,7 +165,7 @@ class MontyStorage:
         self._db[collection].drop()
 
     def replace_collection(self, collection: str, documents: Iterable[Document]) -> int:
-        """Recria a coleção do zero (usado ao gerar os dados)."""
+        """Recreate the collection from scratch (used when generating data)."""
         self.drop(collection)
         return len(self.insert(collection, documents))
 
@@ -175,7 +175,7 @@ class MontyStorage:
     def close(self) -> None:
         try:
             self._client.close()
-        except Exception:  # pragma: no cover - close é best effort
+        except Exception:  # pragma: no cover - close is best effort
             pass
 
     # ------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Schematic: a descrição de como uma linha do banco falso é montada."""
+"""Schematic: the description of how a row of the fake database is built."""
 
 from __future__ import annotations
 
@@ -9,13 +9,13 @@ from . import pipes
 from .errors import SchemaError
 from .generators import GenContext, get as get_generator, exists as generator_exists
 
-#: Chaves de um campo que configuram o FakeBase em vez do gerador.
+#: Field keys that configure FakeBase instead of the generator.
 FIELD_KEYWORDS = frozenset({"method", "transform", "nullable", "unique"})
 
-#: Prefixo usado para referenciar outro campo do mesmo schematic.
+#: Prefix used to reference another field of the same schematic.
 FIELD_REF_PREFIX = "__"
 
-#: Quantas vezes tentar de novo antes de desistir de um campo ``unique``.
+#: How many times to retry before giving up on a ``unique`` field.
 UNIQUE_ATTEMPTS = 200
 
 RefResolver = Callable[[str], Any]
@@ -23,7 +23,7 @@ RefResolver = Callable[[str], Any]
 
 @dataclass
 class FieldSpec:
-    """Um campo do schematic já normalizado."""
+    """A normalized schematic field."""
 
     name: str
     method: Optional[str] = None
@@ -44,11 +44,11 @@ class FieldSpec:
             params = {k: v for k, v in raw.items() if k not in FIELD_KEYWORDS}
             method = raw["method"]
             if not isinstance(method, str):
-                raise SchemaError(f"Campo '{name}': 'method' precisa ser um texto")
+                raise SchemaError(f"Field '{name}': 'method' must be a string")
             if not generator_exists(method):
                 raise SchemaError(
-                    f"Campo '{name}': gerador '{method}' não existe. "
-                    "Rode 'fakebase generators' para ver a lista."
+                    f"Field '{name}': generator '{method}' does not exist. "
+                    "Run 'fakebase generators' to see the list."
                 )
             nullable = _as_probability(name, raw.get("nullable", 0.0))
             return cls(
@@ -80,14 +80,14 @@ def _as_probability(name: str, value: Any) -> float:
     try:
         number = float(value)
     except (TypeError, ValueError):
-        raise SchemaError(f"Campo '{name}': 'nullable' precisa ser um número entre 0 e 1")
+        raise SchemaError(f"Field '{name}': 'nullable' must be a number between 0 and 1")
     if not 0.0 <= number <= 1.0:
-        raise SchemaError(f"Campo '{name}': 'nullable' precisa estar entre 0 e 1")
+        raise SchemaError(f"Field '{name}': 'nullable' must be between 0 and 1")
     return number
 
 
 class Schematic:
-    """Gera linhas a partir de um conjunto de campos."""
+    """Generate rows from a set of fields."""
 
     def __init__(self, name: str, fields: Mapping[str, Any]):
         self.name = name
@@ -104,19 +104,19 @@ class Schematic:
         return {name: spec.describe() for name, spec in self.fields.items()}
 
     def generate(self, ctx: GenContext, resolver: Optional[RefResolver] = None) -> Dict[str, Any]:
-        """Gera uma linha completa."""
+        """Generate a complete row."""
         return _RowBuilder(self, ctx, resolver).build()
 
-    # -- utilidades usadas pelo gerenciador ---------------------------------
+    # -- helpers used by the manager ----------------------------------------
 
     def references(self) -> List[str]:
-        """Todas as referências ``@banco:...@`` presentes no schematic."""
+        """Every ``@database:...@`` reference in the schematic."""
         found: List[str] = []
         _collect_refs(self.raw, found)
         return found
 
     def size_limit(self, base_dir) -> Optional[int]:
-        """Menor limite de linhas imposto pelos geradores sem repetição."""
+        """Smallest row limit imposed by no-repeat generators."""
         limits: List[int] = []
         for spec in self.fields.values():
             if spec.is_constant or spec.method is None:
@@ -131,7 +131,7 @@ class Schematic:
 
 
 class _RowBuilder:
-    """Resolve dependências entre campos e monta uma linha."""
+    """Resolve dependencies between fields and build a row."""
 
     def __init__(self, schematic: Schematic, ctx: GenContext, resolver: Optional[RefResolver]):
         self.schematic = schematic
@@ -151,7 +151,7 @@ class _RowBuilder:
             return self.values[name]
         if name in self.resolving:
             chain = " -> ".join([*self.resolving, name])
-            raise SchemaError(f"Dependência circular entre campos: {chain}")
+            raise SchemaError(f"Circular dependency between fields: {chain}")
         spec = self.schematic.fields[name]
         self.resolving.append(name)
         try:
@@ -186,20 +186,20 @@ class _RowBuilder:
                 seen.add(key)
                 return value
         raise SchemaError(
-            f"Campo '{spec.name}' está marcado como 'unique', mas o gerador "
-            f"'{spec.method}' repetiu o valor {UNIQUE_ATTEMPTS} vezes seguidas. "
-            "Aumente a variedade dos dados ou reduza o tamanho do banco."
+            f"Field '{spec.name}' is marked as 'unique', but the generator "
+            f"'{spec.method}' repeated the value {UNIQUE_ATTEMPTS} times in a row. "
+            "Increase the variety of the data or reduce the size of the database."
         )
 
     def _run(self, spec: FieldSpec, ctx: GenContext) -> Any:
         generator = get_generator(spec.method or "")
-        if generator is None:  # pragma: no cover - validado em FieldSpec.parse
-            raise SchemaError(f"Gerador '{spec.method}' não existe")
+        if generator is None:  # pragma: no cover - validated in FieldSpec.parse
+            raise SchemaError(f"Generator '{spec.method}' does not exist")
         params = {key: self._resolve(value) for key, value in spec.params.items()}
         return pipes.apply(generator.call(ctx, params), spec.transform)
 
     def _render(self, raw_spec: Any, ctx: GenContext) -> Any:
-        """Gera um valor a partir de uma sub-especificação (object/array)."""
+        """Generate a value from a sub-specification (object/array)."""
         spec = FieldSpec.parse(ctx.field_name, raw_spec)
         if spec.is_constant:
             return pipes.apply(self._resolve(spec.constant), spec.transform)
@@ -208,20 +208,20 @@ class _RowBuilder:
         return pipes.apply(generator.call(ctx, params), spec.transform)
 
     def _resolve(self, value: Any) -> Any:
-        """Substitui ``__campo`` e ``@banco:...@`` pelos valores reais."""
+        """Replace ``__field`` and ``@database:...@`` with the real values."""
         if isinstance(value, str):
             if value.startswith(FIELD_REF_PREFIX):
                 target = value[len(FIELD_REF_PREFIX) :]
                 if target in self.schematic.fields:
                     return self._ensure(target)
                 raise SchemaError(
-                    f"Campo '{target}' referenciado por '{value}' não existe no "
+                    f"Field '{target}' referenced by '{value}' does not exist in "
                     f"schematic '{self.schematic.name}'"
                 )
             if is_reference(value):
                 if self.resolver is None:
                     raise SchemaError(
-                        f"Referência {value} usada fora de um banco de dados"
+                        f"Reference {value} used outside of a database"
                     )
                 return self.resolver(value)
             return value
