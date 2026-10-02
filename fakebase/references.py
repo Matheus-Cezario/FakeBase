@@ -1,13 +1,13 @@
-"""Referências entre bancos: ``@banco:campos:condições:quantidade@``.
+"""Cross-database references: ``@database:fields:conditions:count@``.
 
-Exemplos::
+Examples::
 
-    "@products@"                      todos os documentos de products
-    "@products:name@"                 só o campo name, como lista de textos
-    "@products:[name,price]@"         lista de objetos com dois campos
-    "@products:name:price<50@"        filtrando por preço
-    "@products:_id::3@"               três ids sorteados por linha
-    "@products:_id::[1,4]@"           entre um e quatro ids por linha
+    "@products@"                      every document in products
+    "@products:name@"                 only the name field, as a list of strings
+    "@products:[name,price]@"         list of objects with two fields
+    "@products:name:price<50@"        filtering by price
+    "@products:_id::3@"               three random ids per row
+    "@products:_id::[1,4]@"           between one and four ids per row
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ CountSpec = Union[None, str, int, Tuple[int, int]]
 
 @dataclass
 class Reference:
-    """Uma referência já interpretada."""
+    """A parsed reference."""
 
     raw: str
     database: str
@@ -49,25 +49,25 @@ class Reference:
 
 
 def parse_reference(raw: str) -> Reference:
-    """Interpreta o texto de uma referência."""
+    """Parse the text of a reference."""
     if not (isinstance(raw, str) and raw.startswith("@") and raw.endswith("@")):
-        raise LinkError(f"Referência inválida: {raw!r} (esperado @banco:campos:condições:qtd@)")
+        raise LinkError(f"Invalid reference: {raw!r} (expected @database:fields:conditions:count@)")
     body = raw[1:-1].strip()
     if not body:
-        raise LinkError(f"Referência vazia: {raw!r}")
+        raise LinkError(f"Empty reference: {raw!r}")
 
     parts = [part.strip() for part in body.split(":")]
     database = parts[0]
     if not database:
-        raise LinkError(f"Referência {raw!r} não indica o banco de dados")
+        raise LinkError(f"Reference {raw!r} does not name a database")
 
     fields_part = parts[1] if len(parts) > 1 else ""
     conditions_part = parts[2] if len(parts) > 2 else ""
     count_part = parts[3] if len(parts) > 3 else ""
     if len(parts) > 4:
         raise LinkError(
-            f"Referência {raw!r} tem partes demais. "
-            "O formato é @banco:campos:condições:quantidade@"
+            f"Reference {raw!r} has too many parts. "
+            "The format is @database:fields:conditions:count@"
         )
 
     fields, single = _parse_fields(fields_part)
@@ -100,26 +100,26 @@ def _parse_count(text: str, raw: str) -> CountSpec:
     if value.startswith("[") and value.endswith("]"):
         numbers = [part.strip() for part in value[1:-1].split(",") if part.strip()]
         if len(numbers) != 2:
-            raise LinkError(f"Referência {raw!r}: a quantidade em lista precisa ser [min,max]")
+            raise LinkError(f"Reference {raw!r}: a count given as a list must be [min,max]")
         try:
             low, high = int(numbers[0]), int(numbers[1])
         except ValueError:
-            raise LinkError(f"Referência {raw!r}: quantidade [min,max] precisa ser numérica")
+            raise LinkError(f"Reference {raw!r}: count [min,max] must be numeric")
         return (min(low, high), max(low, high))
     try:
         return int(value)
     except ValueError:
         raise LinkError(
-            f"Referência {raw!r}: quantidade {value!r} inválida (use um número, 'all' ou [min,max])"
+            f"Reference {raw!r}: invalid count {value!r} (use a number, 'all' or [min,max])"
         )
 
 
 class ReferenceResolver:
-    """Resolve referências consultando o banco já gerado.
+    """Resolve references by querying the already generated database.
 
-    Os documentos filtrados ficam em cache durante um lote de geração; a
-    amostragem indicada pela quantidade acontece a cada linha, de modo que
-    cada registro receba uma seleção diferente.
+    Filtered documents are cached during a generation batch; the sampling
+    given by the count happens on every row, so each record gets a
+    different selection.
     """
 
     def __init__(self, storage: Any, rng: Optional[random.Random] = None):

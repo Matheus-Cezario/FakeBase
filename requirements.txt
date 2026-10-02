@@ -1,10 +1,10 @@
-# Execução
+# Runtime
 click>=8.1
 faker>=19.0
 fastapi>=0.110
 montydb>=2.5
 uvicorn>=0.27
 
-# Desenvolvimento (testes)
+# Development (tests)
 pytest>=7.4
 httpx>=0.27

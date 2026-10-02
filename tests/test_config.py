@@ -8,101 +8,101 @@ from fakebase.errors import ConfigError
 from conftest import BASE_CONFIG
 
 
-def carregar(tmp_path, raw, **overrides):
+def load(tmp_path, raw, **overrides):
     return Config.from_dict(raw, path=tmp_path / "c.json", **overrides)
 
 
-def test_configuracao_de_exemplo_e_valida(tmp_path):
-    config = carregar(tmp_path, example_config())
+def test_example_config_is_valid(tmp_path):
+    config = load(tmp_path, example_config())
     assert config.database_names == ["users", "products"]
 
 
-def test_settings_padrao_e_sobreposicao(tmp_path):
-    config = carregar(tmp_path, json.loads(json.dumps(BASE_CONFIG)), seed=7, locale="en_US")
+def test_default_settings_and_overrides(tmp_path):
+    config = load(tmp_path, json.loads(json.dumps(BASE_CONFIG)), seed=7, locale="en_US")
     assert config.settings.seed == 7 and config.settings.locale == "en_US"
-    assert config.settings.storage == "memory"  # veio do arquivo
+    assert config.settings.storage == "memory"  # came from the file
 
 
-def test_settings_desconhecido(tmp_path):
+def test_unknown_setting(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
-    raw["Settings"]["velocidade"] = 10
+    raw["Settings"]["speed"] = 10
     with pytest.raises(ConfigError):
-        carregar(tmp_path, raw)
+        load(tmp_path, raw)
 
 
-def test_min_max_size_sao_ordenados():
+def test_min_max_size_are_ordered():
     assert Settings.parse({"minSize": 50, "maxSize": 10}).minSize == 10
 
 
-def test_chave_desconhecida_no_topo(tmp_path):
+def test_unknown_top_level_key(tmp_path):
     with pytest.raises(ConfigError):
-        carregar(tmp_path, {"Schematics": {}, "DataBase": {}, "Outra": 1})
+        load(tmp_path, {"Schematics": {}, "DataBase": {}, "Other": 1})
 
 
-@pytest.mark.parametrize("faltando", ["Schematics", "DataBase"])
-def test_chaves_obrigatorias(tmp_path, faltando):
+@pytest.mark.parametrize("missing", ["Schematics", "DataBase"])
+def test_required_keys(tmp_path, missing):
     raw = json.loads(json.dumps(BASE_CONFIG))
-    raw.pop(faltando)
+    raw.pop(missing)
     with pytest.raises(ConfigError):
-        carregar(tmp_path, raw)
+        load(tmp_path, raw)
 
 
-def test_schema_inexistente(tmp_path):
+def test_missing_schema(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
-    raw["DataBase"]["users"] = {"schema": "fantasma"}
+    raw["DataBase"]["users"] = {"schema": "ghost"}
     with pytest.raises(ConfigError) as exc:
-        carregar(tmp_path, raw)
-    assert "fantasma" in str(exc.value)
+        load(tmp_path, raw)
+    assert "ghost" in str(exc.value)
 
 
-def test_database_como_texto(tmp_path):
+def test_database_as_string(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
     raw["DataBase"]["products"] = "product"
-    config = carregar(tmp_path, raw)
+    config = load(tmp_path, raw)
     assert config.database("products").size is None
 
 
-def test_size_invalido(tmp_path):
+def test_invalid_size(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
-    raw["DataBase"]["users"] = {"schema": "user", "size": "muitos"}
+    raw["DataBase"]["users"] = {"schema": "user", "size": "lots"}
     with pytest.raises(ConfigError):
-        carregar(tmp_path, raw)
+        load(tmp_path, raw)
 
 
-def test_id_automatico_e_unico(tmp_path):
-    config = carregar(tmp_path, json.loads(json.dumps(BASE_CONFIG)))
-    campo = config.schematics["user"].fields["_id"]
-    assert campo.method == "objectId" and campo.unique is True
+def test_automatic_id_is_unique(tmp_path):
+    config = load(tmp_path, json.loads(json.dumps(BASE_CONFIG)))
+    field = config.schematics["user"].fields["_id"]
+    assert field.method == "objectId" and field.unique is True
 
 
-def test_id_declarado_pelo_usuario_e_respeitado(tmp_path):
+def test_user_declared_id_is_kept(tmp_path):
     raw = json.loads(json.dumps(BASE_CONFIG))
     raw["Schematics"]["user"]["_id"] = {"method": "autoIncrement"}
-    config = carregar(tmp_path, raw)
+    config = load(tmp_path, raw)
     assert config.schematics["user"].fields["_id"].method == "autoIncrement"
 
 
-def test_arquivo_inexistente(tmp_path):
+def test_missing_file(tmp_path):
     with pytest.raises(ConfigError):
-        Config.load(tmp_path / "nao_existe.json")
+        Config.load(tmp_path / "does_not_exist.json")
 
 
-def test_arquivo_vazio(tmp_path):
-    caminho = tmp_path / "vazio.json"
-    caminho.write_text("", encoding="utf-8")
+def test_empty_file(tmp_path):
+    path = tmp_path / "empty.json"
+    path.write_text("", encoding="utf-8")
     with pytest.raises(ConfigError):
-        Config.load(caminho)
+        Config.load(path)
 
 
-def test_json_invalido(tmp_path):
-    caminho = tmp_path / "ruim.json"
-    caminho.write_text("{ isso nao e json", encoding="utf-8")
+def test_invalid_json(tmp_path):
+    path = tmp_path / "bad.json"
+    path.write_text("{ this is not json", encoding="utf-8")
     with pytest.raises(ConfigError) as exc:
-        Config.load(caminho)
-    assert "JSON inválido" in str(exc.value)
+        Config.load(path)
+    assert "Invalid JSON" in str(exc.value)
 
 
-def test_describe_expoe_a_configuracao(tmp_path):
-    descricao = carregar(tmp_path, json.loads(json.dumps(BASE_CONFIG))).describe()
-    assert descricao["schematics"]["user"]["email"]["unique"] is True
-    assert descricao["settings"]["locale"] == "pt_BR"
+def test_describe_exposes_the_configuration(tmp_path):
+    description = load(tmp_path, json.loads(json.dumps(BASE_CONFIG))).describe()
+    assert description["schematics"]["user"]["email"]["unique"] is True
+    assert description["settings"]["locale"] == "pt_BR"

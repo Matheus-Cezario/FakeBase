@@ -1,11 +1,11 @@
-"""Tradução de parâmetros de consulta para filtros no dialeto MongoDB.
+"""Translation of query parameters into MongoDB-dialect filters.
 
-Usado em dois lugares:
+Used in two places:
 
-* pela API HTTP, para transformar a *query string* em um filtro
+* by the HTTP API, to turn the *query string* into a filter
   (``?price__gt=40&name__like=ba&sort=-price``);
-* pelo resolvedor de referências entre bancos, para interpretar a parte de
-  condições de ``@products:name:price<40:2@``.
+* by the cross-database reference resolver, to interpret the conditions
+  part of ``@products:name:price<40:2@``.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from .errors import QueryError
 
-#: Parâmetros que controlam a consulta e portanto nunca viram filtro.
+#: Parameters that control the query and therefore never become filters.
 RESERVED_QUERY_KEYS = frozenset(
     {
         "paginate",
@@ -40,7 +40,7 @@ RESERVED_QUERY_KEYS = frozenset(
     }
 )
 
-#: Sufixo ``__op`` -> operador do MongoDB.
+#: ``__op`` suffix -> MongoDB operator.
 OPERATORS: Dict[str, str] = {
     "eq": "$eq",
     "ne": "$ne",
@@ -55,7 +55,7 @@ OPERATORS: Dict[str, str] = {
     "size": "$size",
     "all": "$all",
     "type": "$type",
-    # açúcar sintático resolvido para regex
+    # syntactic sugar resolved to regex
     "like": "$regex",
     "ilike": "$regex",
     "contains": "$regex",
@@ -72,7 +72,7 @@ _FLOAT_RE = re.compile(r"^[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?$")
 
 
 def coerce(value: Any) -> Any:
-    """Converte um valor textual para o tipo Python mais provável."""
+    """Convert a text value to the most likely Python type."""
     if not isinstance(value, str):
         return value
     text = value.strip()
@@ -106,7 +106,7 @@ def coerce_int(value: Any, default: Optional[int] = None) -> Optional[int]:
     try:
         return int(value)
     except (TypeError, ValueError):
-        raise QueryError(f"Valor inteiro inválido: {value!r}")
+        raise QueryError(f"Invalid integer value: {value!r}")
 
 
 def _split_list(value: Any) -> List[Any]:
@@ -141,10 +141,10 @@ def _build_condition(op_name: str, raw_value: Any) -> Any:
 
 
 def build_filter(params: Mapping[str, Any], *, reserved: Iterable[str] = ()) -> Dict[str, Any]:
-    """Constrói um filtro a partir dos parâmetros de consulta.
+    """Build a filter from query parameters.
 
-    ``campo=valor`` vira igualdade; ``campo__op=valor`` usa o operador
-    correspondente. Repetições do mesmo campo são combinadas com ``$and``.
+    ``field=value`` becomes equality; ``field__op=value`` uses the matching
+    operator. Repeated fields are combined with ``$and``.
     """
     ignored = set(RESERVED_QUERY_KEYS) | set(reserved)
     query: Dict[str, Any] = {}
@@ -156,7 +156,7 @@ def build_filter(params: Mapping[str, Any], *, reserved: Iterable[str] = ()) -> 
         field_name, _, op_name = raw_key.partition("__")
         if op_name and op_name not in OPERATORS:
             raise QueryError(
-                f"Operador '{op_name}' desconhecido. Disponíveis: {', '.join(sorted(OPERATORS))}"
+                f"Unknown operator '{op_name}'. Available: {', '.join(sorted(OPERATORS))}"
             )
         values = raw_value if isinstance(raw_value, list) else [raw_value]
         for value in values:
@@ -191,7 +191,7 @@ def parse_sort(value: Any) -> List[Tuple[str, int]]:
 
 
 def parse_projection(include: Any = None, exclude: Any = None) -> Optional[Dict[str, int]]:
-    """Monta a projeção do MongoDB a partir de ``fields``/``exclude``."""
+    """Build the MongoDB projection from ``fields``/``exclude``."""
     if include:
         fields = [f.strip() for f in str(include).split(",") if f.strip()]
         projection = {f: 1 for f in fields}
@@ -205,7 +205,7 @@ def parse_projection(include: Any = None, exclude: Any = None) -> Optional[Dict[
 
 @dataclass
 class ListOptions:
-    """Opções normalizadas de uma consulta de listagem."""
+    """Normalized options of a listing query."""
 
     filter: Dict[str, Any] = field(default_factory=dict)
     sort: List[Tuple[str, int]] = field(default_factory=list)
@@ -242,7 +242,7 @@ class ListOptions:
 
 
 # ---------------------------------------------------------------------------
-# Condições usadas nas referências entre bancos: "price<40 and stock>0"
+# Conditions used in cross-database references: "price<40 and stock>0"
 # ---------------------------------------------------------------------------
 
 _CONDITION_RE = re.compile(r"^\s*([\w.]+)\s*(>=|<=|!=|==|~=|=|>|<)\s*(.*?)\s*$")
@@ -262,11 +262,11 @@ _AND_SPLIT = re.compile(r"\s+and\s+|\s*&&\s*|\s*,\s*", re.IGNORECASE)
 
 
 def parse_conditions(expression: Optional[str]) -> Dict[str, Any]:
-    """Interpreta ``"price<40 and name~=bata"`` como filtro MongoDB.
+    """Interpret ``"price<40 and name~=bata"`` as a MongoDB filter.
 
-    Suporta ``and``/``,``/``&&`` e ``or``/``||``; ``~=`` significa "contém"
-    (regex sem diferenciar maiúsculas). Substitui o ``eval()`` da versão
-    antiga, que executava a expressão vinda do arquivo de configuração.
+    Supports ``and``/``,``/``&&`` and ``or``/``||``; ``~=`` means "contains"
+    (case-insensitive regex). Replaces the ``eval()`` of the old version,
+    which executed the expression coming from the configuration file.
     """
     if expression is None:
         return {}
@@ -298,7 +298,7 @@ def _parse_atom(atom: str) -> Dict[str, Any]:
     match = _CONDITION_RE.match(atom)
     if not match:
         raise QueryError(
-            f"Condição inválida: {atom!r} (esperado algo como 'price<40' ou 'name==Batata')"
+            f"Invalid condition: {atom!r} (expected something like 'price<40' or 'name==Batata')"
         )
     name, operator, raw_value = match.groups()
     if operator == "~=":
@@ -309,7 +309,7 @@ def _parse_atom(atom: str) -> Dict[str, Any]:
 
 
 def apply_sort(documents: Sequence[Dict[str, Any]], sort: Sequence[Tuple[str, int]]) -> List[Dict[str, Any]]:
-    """Ordenação estável em memória (usada onde não há sort nativo)."""
+    """Stable in-memory sort (used where there is no native sort)."""
     result = list(documents)
     for key, direction in reversed(list(sort)):
         result.sort(key=lambda doc: _sort_key(doc.get(key)), reverse=direction < 0)

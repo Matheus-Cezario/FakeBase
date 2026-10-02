@@ -1,4 +1,4 @@
-"""Leitura e validação do arquivo de configuração (``config.fakebase.json``)."""
+"""Loading and validation of the configuration file (``config.fakebase.json``)."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ DEFAULT_QUERIES_PATH = "./queries"
 
 @dataclass
 class Settings:
-    """Ajustes globais, vindos da chave ``Settings`` e/ou do CLI."""
+    """Global settings, from the ``Settings`` key and/or the CLI."""
 
     locale: str = "pt_BR"
     seed: Optional[int] = None
@@ -45,8 +45,8 @@ class Settings:
         unknown = set(raw) - set(cls.__dataclass_fields__)
         if unknown:
             raise ConfigError(
-                f"Settings desconhecido(s): {', '.join(sorted(unknown))}. "
-                f"Aceitos: {', '.join(sorted(cls.__dataclass_fields__))}"
+                f"Unknown setting(s): {', '.join(sorted(unknown))}. "
+                f"Accepted: {', '.join(sorted(cls.__dataclass_fields__))}"
             )
         settings = cls(**dict(raw))
         if settings.minSize > settings.maxSize:
@@ -54,20 +54,20 @@ class Settings:
         return settings
 
     def merge(self, **overrides: Any) -> "Settings":
-        """Devolve uma cópia com os valores não nulos de ``overrides``."""
+        """Return a copy with the non-null values of ``overrides``."""
         data = {**self.__dict__}
         for key, value in overrides.items():
             if value is None:
                 continue
             if key not in data:
-                raise ConfigError(f"Ajuste desconhecido: {key}")
+                raise ConfigError(f"Unknown setting: {key}")
             data[key] = value
         return Settings(**data)
 
 
 @dataclass
 class DatabaseSpec:
-    """Um banco de dados a ser gerado."""
+    """A database to be generated."""
 
     name: str
     schema: str
@@ -80,20 +80,20 @@ class DatabaseSpec:
             return cls(name=name, schema=raw)
         if not isinstance(raw, dict):
             raise ConfigError(
-                f"DataBase '{name}': esperado o nome de um schematic ou um objeto"
+                f"DataBase '{name}': expected a schematic name or an object"
             )
         if "schema" not in raw:
-            raise ConfigError(f"DataBase '{name}': campo 'schema' é obrigatório")
+            raise ConfigError(f"DataBase '{name}': field 'schema' is required")
         unknown = set(raw) - {"schema", "size"}
         if unknown:
             raise ConfigError(
-                f"DataBase '{name}': chave(s) inválida(s) {', '.join(sorted(unknown))}"
+                f"DataBase '{name}': invalid key(s) {', '.join(sorted(unknown))}"
             )
         size = raw.get("size")
         if isinstance(size, (list, tuple)):
             if len(size) != 2:
                 raise ConfigError(
-                    f"DataBase '{name}': 'size' em lista precisa ter dois números [min, max]"
+                    f"DataBase '{name}': 'size' as a list needs two numbers [min, max]"
                 )
             low, high = int(size[0]), int(size[1])
             return cls(name=name, schema=raw["schema"], size_range=(min(low, high), max(low, high)))
@@ -101,15 +101,15 @@ class DatabaseSpec:
             try:
                 size = int(size)
             except (TypeError, ValueError):
-                raise ConfigError(f"DataBase '{name}': 'size' precisa ser um número")
+                raise ConfigError(f"DataBase '{name}': 'size' must be a number")
             if size < 0:
-                raise ConfigError(f"DataBase '{name}': 'size' não pode ser negativo")
+                raise ConfigError(f"DataBase '{name}': 'size' cannot be negative")
         return cls(name=name, schema=raw["schema"], size=size)
 
 
 @dataclass
 class Config:
-    """Configuração completa já validada."""
+    """Complete, already validated configuration."""
 
     path: Path
     base_dir: Path
@@ -122,13 +122,13 @@ class Config:
     def load(cls, path: Union[str, Path], **overrides: Any) -> "Config":
         config_path = Path(path)
         if not config_path.is_file():
-            raise ConfigError(f"Arquivo de configuração não encontrado: {config_path}")
+            raise ConfigError(f"Configuration file not found: {config_path}")
         if config_path.stat().st_size == 0:
-            raise ConfigError(f"Arquivo de configuração vazio: {config_path}")
+            raise ConfigError(f"Empty configuration file: {config_path}")
         try:
             raw = json.loads(config_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            raise ConfigError(f"JSON inválido em {config_path}: {exc}") from exc
+            raise ConfigError(f"Invalid JSON in {config_path}: {exc}") from exc
         return cls.from_dict(raw, path=config_path, **overrides)
 
     @classmethod
@@ -136,17 +136,17 @@ class Config:
         cls, raw: Mapping[str, Any], path: Union[str, Path] = DEFAULT_CONFIG_PATH, **overrides: Any
     ) -> "Config":
         if not isinstance(raw, dict):
-            raise ConfigError("A configuração precisa ser um objeto JSON")
+            raise ConfigError("The configuration must be a JSON object")
         unknown = set(raw) - KNOWN_KEYS
         if unknown:
             raise ConfigError(
-                f"Chave(s) desconhecida(s) na configuração: {', '.join(sorted(unknown))}. "
-                f"Esperado: {', '.join(sorted(KNOWN_KEYS))}"
+                f"Unknown key(s) in the configuration: {', '.join(sorted(unknown))}. "
+                f"Expected: {', '.join(sorted(KNOWN_KEYS))}"
             )
         if SCHEMATICS_KEY not in raw:
-            raise ConfigError(f"A configuração precisa da chave '{SCHEMATICS_KEY}'")
+            raise ConfigError(f"The configuration needs the '{SCHEMATICS_KEY}' key")
         if DATABASE_KEY not in raw:
-            raise ConfigError(f"A configuração precisa da chave '{DATABASE_KEY}'")
+            raise ConfigError(f"The configuration needs the '{DATABASE_KEY}' key")
 
         config_path = Path(path)
         base_dir = config_path.parent if config_path.parent != Path("") else Path(".")
@@ -154,25 +154,25 @@ class Config:
 
         raw_schematics = raw[SCHEMATICS_KEY]
         if not isinstance(raw_schematics, dict) or not raw_schematics:
-            raise ConfigError(f"'{SCHEMATICS_KEY}' precisa ser um objeto com ao menos um schematic")
+            raise ConfigError(f"'{SCHEMATICS_KEY}' must be an object with at least one schematic")
 
         schematics: Dict[str, Schematic] = {}
         for name, fields in raw_schematics.items():
             if not isinstance(fields, dict):
-                raise ConfigError(f"Schematic '{name}' precisa ser um objeto de campos")
+                raise ConfigError(f"Schematic '{name}' must be an object of fields")
             schematics[name] = Schematic(name, _with_id(fields, settings.idGenerator))
 
         raw_databases = raw[DATABASE_KEY]
         if not isinstance(raw_databases, dict) or not raw_databases:
-            raise ConfigError(f"'{DATABASE_KEY}' precisa ser um objeto com ao menos um banco")
+            raise ConfigError(f"'{DATABASE_KEY}' must be an object with at least one database")
 
         databases = [DatabaseSpec.parse(name, value) for name, value in raw_databases.items()]
         known = set(schematics)
         for spec in databases:
             if spec.schema not in known:
                 raise ConfigError(
-                    f"DataBase '{spec.name}' usa o schematic '{spec.schema}', que não existe. "
-                    f"Schematics disponíveis: {', '.join(sorted(known))}"
+                    f"DataBase '{spec.name}' uses the schematic '{spec.schema}', which does not exist. "
+                    f"Available schematics: {', '.join(sorted(known))}"
                 )
 
         config = cls(
@@ -200,12 +200,12 @@ class Config:
     def schematic_for(self, name: str) -> Schematic:
         spec = self.database(name)
         if spec is None:
-            raise ConfigError(f"Banco '{name}' não existe na configuração")
+            raise ConfigError(f"Database '{name}' does not exist in the configuration")
         return self.schematics[spec.schema]
 
     def validate_references(self) -> None:
-        """Confere se toda referência ``@banco:...@`` aponta para um banco real."""
-        from .references import parse_reference  # import tardio evita ciclo
+        """Check that every ``@database:...@`` reference points to a real database."""
+        from .references import parse_reference  # late import avoids a cycle
 
         known = set(self.database_names)
         for spec in self.databases:
@@ -214,14 +214,14 @@ class Config:
                 reference = parse_reference(raw_ref)
                 if reference.database not in known:
                     raise ConfigError(
-                        f"Schematic '{schematic.name}' referencia o banco "
-                        f"'{reference.database}', que não existe. "
-                        f"Bancos disponíveis: {', '.join(sorted(known))}"
+                        f"Schematic '{schematic.name}' references the database "
+                        f"'{reference.database}', which does not exist. "
+                        f"Available databases: {', '.join(sorted(known))}"
                     )
 
     @property
     def queries_dir(self) -> Path:
-        """Pasta das queries customizadas (relativa ao arquivo de configuração)."""
+        """Custom queries folder (relative to the configuration file)."""
         folder = Path(self.settings.queriesPath)
         return folder if folder.is_absolute() else self.base_dir / folder
 
@@ -243,11 +243,11 @@ class Config:
 
 
 def _with_id(fields: Mapping[str, Any], id_generator: str) -> Dict[str, Any]:
-    """Garante que todo schematic tenha um ``_id`` único.
+    """Ensure every schematic has a unique ``_id``.
 
-    O ``_id`` gerado automaticamente nasce com ``unique``: além de evitar
-    repetições dentro do mesmo lote, isso faz o FakeBase carregar os ids já
-    gravados antes de acrescentar documentos a um banco existente.
+    The automatically generated ``_id`` is created with ``unique``: besides
+    avoiding repetitions within the same batch, this makes FakeBase load the
+    ids already stored before appending documents to an existing database.
     """
     if "_id" in fields:
         return dict(fields)
@@ -255,7 +255,7 @@ def _with_id(fields: Mapping[str, Any], id_generator: str) -> Dict[str, Any]:
 
 
 def example_config() -> Dict[str, Any]:
-    """Configuração de exemplo usada por ``fakebase init``."""
+    """Example configuration used by ``fakebase init``."""
     return {
         "Settings": {"locale": "pt_BR", "seed": 42},
         "Schematics": {

@@ -1,4 +1,4 @@
-"""Camada de persistência do FakeBase."""
+"""FakeBase persistence layer."""
 
 from .base import Document, Sort, Storage
 from .monty import MEMORY, STORAGE_BACKENDS, MontyStorage
@@ -7,7 +7,7 @@ __all__ = ["Document", "Sort", "Storage", "MontyStorage", "MEMORY", "STORAGE_BAC
 
 
 def open_storage(settings) -> MontyStorage:
-    """Abre o banco descrito em :class:`~fakebase.config.Settings`."""
+    """Open the database described by :class:`~fakebase.config.Settings`."""
     return MontyStorage(
         settings.storagePath,
         database=settings.database,

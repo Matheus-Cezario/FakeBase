@@ -1,4 +1,4 @@
-"""Geradores de texto, web e mídia."""
+"""Text, web and media generators."""
 
 from __future__ import annotations
 
@@ -10,9 +10,9 @@ from .people import slugify
 
 @generator(
     "word",
-    category="texto",
-    doc="Uma ou mais palavras.",
-    params={"count": "quantidade de palavras (padrão 1)"},
+    category="text",
+    doc="One or more words.",
+    params={"count": "number of words (default 1)"},
     aliases=("words",),
 )
 def word(ctx: GenContext, count: int = 1) -> str:
@@ -21,9 +21,9 @@ def word(ctx: GenContext, count: int = 1) -> str:
 
 @generator(
     "sentence",
-    category="texto",
-    doc="Frase curta.",
-    params={"words": "quantidade aproximada de palavras (padrão 6)"},
+    category="text",
+    doc="Short sentence.",
+    params={"words": "approximate number of words (default 6)"},
 )
 def sentence(ctx: GenContext, words: int = 6) -> str:
     return ctx.faker.sentence(nb_words=max(words, 1))
@@ -31,9 +31,9 @@ def sentence(ctx: GenContext, words: int = 6) -> str:
 
 @generator(
     "paragraph",
-    category="texto",
-    doc="Parágrafo.",
-    params={"sentences": "quantidade de frases (padrão 3)"},
+    category="text",
+    doc="Paragraph.",
+    params={"sentences": "number of sentences (default 3)"},
 )
 def paragraph(ctx: GenContext, sentences: int = 3) -> str:
     return ctx.faker.paragraph(nb_sentences=max(sentences, 1))
@@ -41,9 +41,9 @@ def paragraph(ctx: GenContext, sentences: int = 3) -> str:
 
 @generator(
     "text",
-    category="texto",
-    doc="Bloco de texto.",
-    params={"maxChars": "tamanho máximo em caracteres (padrão 200)"},
+    category="text",
+    doc="Block of text.",
+    params={"maxChars": "maximum length in characters (default 200)"},
 )
 def text(ctx: GenContext, maxChars: int = 200) -> str:
     return ctx.faker.text(max_nb_chars=max(maxChars, 5))
@@ -51,11 +51,11 @@ def text(ctx: GenContext, maxChars: int = 200) -> str:
 
 @generator(
     "slug",
-    category="texto",
-    doc="Identificador amigável para URLs.",
+    category="text",
+    doc="URL-friendly identifier.",
     params={
-        "value": "texto de origem, normalmente '__nomeDoCampo' (padrão: palavras aleatórias)",
-        "separator": "separador (padrão -)",
+        "value": "source text, usually '__fieldName' (default: random words)",
+        "separator": "separator (default -)",
     },
 )
 def slug(ctx: GenContext, value: Optional[str] = None, separator: str = "-") -> str:
@@ -65,9 +65,9 @@ def slug(ctx: GenContext, value: Optional[str] = None, separator: str = "-") -> 
 
 @generator(
     "color",
-    category="mídia",
-    doc="Cor aleatória.",
-    params={"valueFormat": "hex | name | rgb (padrão hex)"},
+    category="media",
+    doc="Random color.",
+    params={"valueFormat": "hex | name | rgb (default hex)"},
 )
 def color(ctx: GenContext, valueFormat: str = "hex") -> str:
     mode = str(valueFormat).lower()
@@ -80,63 +80,63 @@ def color(ctx: GenContext, valueFormat: str = "hex") -> str:
 
 @generator(
     "imageUrl",
-    category="mídia",
-    doc="URL de imagem de placeholder.",
-    params={"width": "largura (padrão 640)", "height": "altura (padrão 480)"},
+    category="media",
+    doc="Placeholder image URL.",
+    params={"width": "width (default 640)", "height": "height (default 480)"},
 )
 def image_url(ctx: GenContext, width: int = 640, height: int = 480) -> str:
     return f"https://picsum.photos/seed/{ctx.rng.randrange(10**6)}/{width}/{height}"
 
 
-@generator("url", category="web", doc="URL aleatória.")
+@generator("url", category="web", doc="Random URL.")
 def url(ctx: GenContext) -> str:
     return ctx.faker.url()
 
 
-@generator("domain", category="web", doc="Nome de domínio.")
+@generator("domain", category="web", doc="Domain name.")
 def domain(ctx: GenContext) -> str:
     return ctx.faker.domain_name()
 
 
-@generator("ipv4", category="web", doc="Endereço IPv4.")
+@generator("ipv4", category="web", doc="IPv4 address.")
 def ipv4(ctx: GenContext) -> str:
     return ctx.faker.ipv4()
 
 
-@generator("ipv6", category="web", doc="Endereço IPv6.")
+@generator("ipv6", category="web", doc="IPv6 address.")
 def ipv6(ctx: GenContext) -> str:
     return ctx.faker.ipv6()
 
 
-@generator("macAddress", category="web", doc="Endereço MAC.")
+@generator("macAddress", category="web", doc="MAC address.")
 def mac_address(ctx: GenContext) -> str:
     return ctx.faker.mac_address()
 
 
-@generator("userAgent", category="web", doc="User agent de navegador.")
+@generator("userAgent", category="web", doc="Browser user agent.")
 def user_agent(ctx: GenContext) -> str:
     return ctx.faker.user_agent()
 
 
 @generator(
     "fileName",
-    category="mídia",
-    doc="Nome de arquivo.",
-    params={"extension": "extensão fixa, por exemplo 'pdf' (opcional)"},
+    category="media",
+    doc="File name.",
+    params={"extension": "fixed extension, for example 'pdf' (optional)"},
 )
 def file_name(ctx: GenContext, extension: Optional[str] = None) -> str:
     return ctx.faker.file_name(extension=extension) if extension else ctx.faker.file_name()
 
 
-@generator("mimeType", category="mídia", doc="Tipo MIME.")
+@generator("mimeType", category="media", doc="MIME type.")
 def mime_type(ctx: GenContext) -> str:
     return ctx.faker.mime_type()
 
 
 @generator(
     "language",
-    category="texto",
-    doc="Código de idioma (pt_BR, en_US, ...).",
+    category="text",
+    doc="Language code (pt_BR, en_US, ...).",
 )
 def language(ctx: GenContext) -> str:
     return ctx.faker.locale()
@@ -144,8 +144,8 @@ def language(ctx: GenContext) -> str:
 
 @generator(
     "currencyCode",
-    category="negócios",
-    doc="Código de moeda (BRL, USD, ...).",
+    category="business",
+    doc="Currency code (BRL, USD, ...).",
 )
 def currency_code(ctx: GenContext) -> str:
     return ctx.faker.currency_code()

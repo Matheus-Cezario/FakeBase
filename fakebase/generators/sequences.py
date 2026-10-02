@@ -1,4 +1,4 @@
-"""Geradores que trabalham sobre listas: escolhas, amostras e sequências."""
+"""Generators that work on lists: choices, samples and sequences."""
 
 from __future__ import annotations
 
@@ -16,12 +16,12 @@ def _normalize(value: Any) -> Any:
 
 @generator(
     "choice",
-    category="listas",
-    doc="Escolhe um valor de uma lista, arquivo ou referência a outro banco.",
+    category="lists",
+    doc="Pick a value from a list, a file or a reference to another database.",
     params={
-        "data": "lista, caminho de arquivo (um valor por linha) ou @banco:campo@",
-        "repeat": "permite repetir valores entre as linhas (padrão true)",
-        "weights": "pesos relativos, na mesma ordem de data (opcional)",
+        "data": "list, file path (one value per line) or @database:field@",
+        "repeat": "allow repeating values across rows (default true)",
+        "weights": "relative weights, in the same order as data (optional)",
     },
     size_limit=no_repeat_limit,
 )
@@ -38,7 +38,7 @@ def choice(
         if weights:
             if len(weights) != len(values):
                 raise GeneratorError(
-                    f"'weights' tem {len(weights)} itens e 'data' tem {len(values)}"
+                    f"'weights' has {len(weights)} items and 'data' has {len(values)}"
                 )
             return _normalize(ctx.rng.choices(values, weights=list(weights), k=1)[0])
         return _normalize(ctx.rng.choice(values))
@@ -46,9 +46,9 @@ def choice(
     pool = pick_pool(ctx, values)
     if not pool:
         raise GeneratorError(
-            f"O campo '{ctx.field_name}' usa 'choice' com repeat=false e os "
-            f"{len(values)} valores disponíveis já foram usados. Aumente a lista "
-            "de dados ou reduza a quantidade de documentos."
+            f"Field '{ctx.field_name}' uses 'choice' with repeat=false and all "
+            f"{len(values)} available values were already used. Grow the data "
+            "list or reduce the number of documents."
         )
     value = pool.pop(ctx.rng.randrange(len(pool)))
     return _normalize(value)
@@ -56,14 +56,14 @@ def choice(
 
 @generator(
     "chooseSeveral",
-    category="listas",
-    doc="Escolhe vários valores de uma lista.",
+    category="lists",
+    doc="Pick several values from a list.",
     params={
-        "data": "lista, caminho de arquivo ou @banco:campo@",
-        "repeat": "permite repetir valores dentro do resultado (padrão true)",
-        "minValue": "quantidade mínima (padrão 0)",
-        "maxValue": "quantidade máxima (padrão o tamanho de data)",
-        "size": "quantidade fixa (ignora minValue/maxValue)",
+        "data": "list, file path or @database:field@",
+        "repeat": "allow repeating values within the result (default true)",
+        "minValue": "minimum count (default 0)",
+        "maxValue": "maximum count (default the length of data)",
+        "size": "fixed count (ignores minValue/maxValue)",
     },
     aliases=("sample",),
 )
@@ -96,11 +96,11 @@ def choose_several(
 
 @generator(
     "sequence",
-    category="listas",
-    doc="Percorre a lista em ordem, uma posição por linha.",
+    category="lists",
+    doc="Walk the list in order, one position per row.",
     params={
-        "data": "lista, caminho de arquivo ou @banco:campo@",
-        "repeat": "recomeça do início quando a lista acaba (padrão true)",
+        "data": "list, file path or @database:field@",
+        "repeat": "start over when the list ends (default true)",
     },
     size_limit=no_repeat_limit,
 )
@@ -115,9 +115,9 @@ def sequence(
     if index >= len(values):
         if not repeat:
             raise GeneratorError(
-                f"O campo '{ctx.field_name}' usa 'sequence' com repeat=false e a "
-                f"lista de {len(values)} valores chegou ao fim. Aumente a lista de "
-                "dados ou reduza a quantidade de documentos."
+                f"Field '{ctx.field_name}' uses 'sequence' with repeat=false and the "
+                f"list of {len(values)} values ran out. Grow the data list or "
+                "reduce the number of documents."
             )
         index = index % len(values)
     local["index"] = index + 1
@@ -126,23 +126,23 @@ def sequence(
 
 @generator(
     "numericSequence",
-    category="listas",
-    doc="Lista de números em progressão aritmética.",
-    params={"start": "início (padrão 0)", "stop": "fim, exclusivo (padrão 10)", "step": "passo (padrão 1)"},
+    category="lists",
+    doc="List of numbers in arithmetic progression.",
+    params={"start": "start (default 0)", "stop": "end, exclusive (default 10)", "step": "step (default 1)"},
 )
 def numeric_sequence(ctx: GenContext, start: int = 0, stop: int = 10, step: int = 1) -> List[int]:
     if step == 0:
-        raise GeneratorError("O parâmetro 'step' não pode ser zero")
+        raise GeneratorError("Parameter 'step' cannot be zero")
     return list(range(start, stop, step))
 
 
 @generator(
     "randomSequence",
-    category="listas",
-    doc="Fatia contígua e aleatória de uma lista.",
+    category="lists",
+    doc="Random contiguous slice of a list.",
     params={
-        "data": "lista, caminho de arquivo ou @banco:campo@",
-        "size": "tamanho da fatia (padrão um terço da lista)",
+        "data": "list, file path or @database:field@",
+        "size": "slice length (default a third of the list)",
     },
 )
 def random_sequence(
@@ -159,9 +159,9 @@ def random_sequence(
 
 @generator(
     "shuffle",
-    category="listas",
-    doc="Devolve a lista inteira embaralhada.",
-    params={"data": "lista, caminho de arquivo ou @banco:campo@"},
+    category="lists",
+    doc="Return the whole list shuffled.",
+    params={"data": "list, file path or @database:field@"},
 )
 def shuffle(ctx: GenContext, data: Union[str, Sequence[Any], None] = None) -> List[Any]:
     values = [_normalize(v) for v in load_data(ctx, data)]

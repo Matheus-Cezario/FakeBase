@@ -1,41 +1,41 @@
-"""Exceções do FakeBase.
+"""FakeBase exceptions.
 
-Todas herdam de :class:`FakeBaseError`, o que permite ao CLI capturar
-qualquer falha esperada e apresentá-la sem stack trace.
+They all inherit from :class:`FakeBaseError`, which lets the CLI catch any
+expected failure and show it without a stack trace.
 """
 
 
 class FakeBaseError(Exception):
-    """Erro base do FakeBase."""
+    """Base FakeBase error."""
 
 
 class ConfigError(FakeBaseError):
-    """Arquivo de configuração ausente, vazio ou malformado."""
+    """Configuration file missing, empty or malformed."""
 
 
 class SchemaError(FakeBaseError):
-    """Schematic inválido (campo desconhecido, ciclo de dependência, ...)."""
+    """Invalid schematic (unknown field, dependency cycle, ...)."""
 
 
 class GeneratorError(FakeBaseError):
-    """Erro ao executar um gerador de valores."""
+    """Error while running a value generator."""
 
 
 class TransformError(FakeBaseError):
-    """Erro ao executar um pipe/transform."""
+    """Error while running a pipe/transform."""
 
 
 class LinkError(FakeBaseError):
-    """Referência entre bancos inválida ou cíclica."""
+    """Invalid or circular reference between databases."""
 
 
 class StorageError(FakeBaseError):
-    """Falha na camada de persistência."""
+    """Persistence layer failure."""
 
 
 class NotFoundError(FakeBaseError):
-    """Coleção ou documento inexistente."""
+    """Collection or document does not exist."""
 
 
 class QueryError(FakeBaseError):
-    """Parâmetros de consulta inválidos."""
+    """Invalid query parameters."""

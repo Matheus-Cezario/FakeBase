@@ -15,32 +15,32 @@ from fakebase.query import (
     "raw,expected",
     [("10", 10), ("1.5", 1.5), ("true", True), ("false", False), ("null", None), ("ab", "ab")],
 )
-def test_coerce_detecta_tipos(raw, expected):
+def test_coerce_detects_types(raw, expected):
     assert coerce(raw) == expected
 
 
-def test_build_filter_com_operadores():
+def test_build_filter_with_operators():
     assert build_filter({"price__gt": "40"}) == {"price": {"$gt": 40}}
     assert build_filter({"tag__in": "a,b"}) == {"tag": {"$in": ["a", "b"]}}
     assert build_filter({"name__start": "Ba"})["name"]["$regex"] == "^Ba"
     assert build_filter({"age": "30"}) == {"age": 30}
 
 
-def test_build_filter_ignora_parametros_reservados():
+def test_build_filter_ignores_reserved_params():
     assert build_filter({"sort": "-price", "limit": "5", "paginate": "true"}) == {}
 
 
-def test_build_filter_combina_repeticoes_do_mesmo_campo():
+def test_build_filter_combines_repeated_fields():
     result = build_filter({"price__gt": ["10", "20"]})
     assert result == {"$and": [{"price": {"$gt": 10}}, {"price": {"$gt": 20}}]}
 
 
-def test_build_filter_rejeita_operador_desconhecido():
+def test_build_filter_rejects_unknown_operator():
     with pytest.raises(QueryError):
-        build_filter({"price__maior": "10"})
+        build_filter({"price__bigger": "10"})
 
 
-def test_parse_sort_e_projection():
+def test_parse_sort_and_projection():
     assert parse_sort("-price,name") == [("price", -1), ("name", 1)]
     assert parse_projection("name,price") == {"name": 1, "price": 1, "_id": 1}
     assert parse_projection(None, "cart") == {"cart": 0}
@@ -56,16 +56,16 @@ def test_parse_conditions_and_or():
     assert parse_conditions(None) == {}
 
 
-def test_parse_conditions_contem():
+def test_parse_conditions_contains():
     assert parse_conditions("name~=bata")["name"]["$options"] == "i"
 
 
-def test_parse_conditions_invalida():
+def test_parse_conditions_invalid():
     with pytest.raises(QueryError):
-        parse_conditions("preco muito alto")
+        parse_conditions("price way too high")
 
 
-def test_list_options_paginacao():
+def test_list_options_pagination():
     options = ListOptions.from_query({"paginate": "true", "page": "3", "pageCount": "5"})
     assert (options.limit, options.skip) == (5, 10)
     options = ListOptions.from_query({"limit": "7", "skip": "2"})

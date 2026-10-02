@@ -1,11 +1,11 @@
-"""API HTTP do FakeBase (FastAPI).
+"""FakeBase HTTP API (FastAPI).
 
-Além das rotas REST novas (``/users``, ``/users/{id}``, ...) as rotas da
-versão 1.x continuam funcionando: ``/list/users``, ``/get/users``,
-``/update/users``, ``/set/users`` e ``/delete/users``.
+Besides the new REST routes (``/users``, ``/users/{id}``, ...) the version
+1.x routes keep working: ``/list/users``, ``/get/users``, ``/update/users``,
+``/set/users`` and ``/delete/users``.
 
-As queries customizadas (arquivos ``.sql`` da pasta de queries) viram rotas
-próprias, registradas antes das rotas REST genéricas.
+Custom queries (``.sql`` files in the queries folder) become routes of their
+own, registered before the generic REST routes.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ STATUS_BY_ERROR = {
 
 
 def query_dict(request: Request) -> Dict[str, Any]:
-    """Query string como dicionário, agrupando chaves repetidas em listas."""
+    """Query string as a dict, grouping repeated keys into lists."""
     params: Dict[str, Any] = {}
     for key, value in request.query_params.multi_items():
         if key in params:
@@ -61,11 +61,11 @@ async def json_body(request: Request) -> Any:
             return {}
         return await request.json()
     except Exception:
-        raise QueryError("O corpo da requisição precisa ser um JSON válido")
+        raise QueryError("The request body must be valid JSON")
 
 
 def envelope(documents: List[Dict[str, Any]], total: int, options: ListOptions) -> Dict[str, Any]:
-    """Formato de resposta com metadados de paginação."""
+    """Response format with pagination metadata."""
     payload: Dict[str, Any] = {"value": documents, "totalItens": total, "totalItems": total}
     if options.paginate:
         payload.update(
@@ -84,9 +84,9 @@ def create_app(fakebase: FakeBase) -> FastAPI:
         title="FakeBase",
         version=__version__,
         description=(
-            "Banco de dados falso servido por rotas CRUD. "
-            "Os dados ficam em um NoSQL embutido (MontyDB) e as consultas usam "
-            "operadores no estilo MongoDB."
+            "Fake database served through CRUD routes. "
+            "The data lives in an embedded NoSQL store (MontyDB) and queries use "
+            "MongoDB-style operators."
         ),
     )
     app.state.fakebase = fakebase
@@ -117,9 +117,9 @@ def create_app(fakebase: FakeBase) -> FastAPI:
         return JSONResponse(status_code=status, content={"error": str(exc), "type": type(exc).__name__})
 
     # ------------------------------------------------------------------
-    # Metadados
+    # Metadata
     # ------------------------------------------------------------------
-    @app.get("/", tags=["meta"], summary="Bancos disponíveis")
+    @app.get("/", tags=["meta"], summary="Available databases")
     def index() -> Dict[str, Any]:
         stored = fakebase.storage.stats()
         return {
@@ -140,20 +140,20 @@ def create_app(fakebase: FakeBase) -> FastAPI:
             "queries": [{"method": q.method, "url": q.route} for q in queries],
         }
 
-    @app.get("/_schema", tags=["meta"], summary="Schematics da configuração")
+    @app.get("/_schema", tags=["meta"], summary="Configuration schematics")
     def schema_all() -> Dict[str, Any]:
         return {name: s.describe() for name, s in fakebase.config.schematics.items()}
 
-    @app.get("/_schema/{name}", tags=["meta"], summary="Schematic de um banco")
+    @app.get("/_schema/{name}", tags=["meta"], summary="Schematic of a database")
     def schema_one(name: str) -> Dict[str, Any]:
         schematic = fakebase.schematic_of(name)
         return {"database": name, "schema": schematic.name, "fields": schematic.describe()}
 
-    @app.get("/_stats", tags=["meta"], summary="Quantidade de documentos por banco")
+    @app.get("/_stats", tags=["meta"], summary="Document count per database")
     def stats() -> Dict[str, Any]:
         return fakebase.stats()
 
-    @app.get("/_generators", tags=["meta"], summary="Geradores e transforms disponíveis")
+    @app.get("/_generators", tags=["meta"], summary="Available generators and transforms")
     def generators() -> Dict[str, Any]:
         return {
             "generators": [
@@ -171,12 +171,12 @@ def create_app(fakebase: FakeBase) -> FastAPI:
             ],
         }
 
-    @app.get("/_queries", tags=["meta"], summary="Queries customizadas carregadas")
+    @app.get("/_queries", tags=["meta"], summary="Loaded custom queries")
     def list_queries() -> List[Dict[str, Any]]:
         return [endpoint.describe() for endpoint in queries]
 
     # ------------------------------------------------------------------
-    # Queries customizadas (antes das rotas genéricas, que capturariam a URL)
+    # Custom queries (before the generic routes, which would capture the URL)
     # ------------------------------------------------------------------
     for endpoint in queries:
         app.add_api_route(
@@ -185,56 +185,56 @@ def create_app(fakebase: FakeBase) -> FastAPI:
             methods=[endpoint.method],
             tags=["queries"],
             summary=endpoint.summary,
-            description=endpoint.description or f"Arquivo `{endpoint.relative}`",
+            description=endpoint.description or f"File `{endpoint.relative}`",
             openapi_extra=endpoint.openapi(),
             name=f"{endpoint.method} {endpoint.route}",
         )
 
     # ------------------------------------------------------------------
-    # Rotas compatíveis com a versão 1.x
+    # Routes compatible with version 1.x
     # ------------------------------------------------------------------
-    @app.get("/list/{key}", tags=["compatibilidade"], summary="Lista itens (formato 1.x)")
+    @app.get("/list/{key}", tags=["compatibility"], summary="List items (1.x format)")
     def legacy_list(key: str, request: Request) -> Dict[str, Any]:
         options = ListOptions.from_query(query_dict(request))
         documents, total = fakebase.list(key, options)
         return envelope(documents, total, options)
 
-    @app.get("/get/{key}", tags=["compatibilidade"], summary="Primeiro item que casa com o filtro")
+    @app.get("/get/{key}", tags=["compatibility"], summary="First item matching the filter")
     def legacy_get(key: str, request: Request) -> Any:
         options = ListOptions.from_query(query_dict(request))
         return fakebase.get(key, options) or {}
 
-    @app.get("/update/{key}", tags=["compatibilidade"], summary="Atualiza campos dos itens filtrados")
+    @app.get("/update/{key}", tags=["compatibility"], summary="Update fields of the filtered items")
     @app.api_route(
         "/update/{key}", methods=["POST", "PUT", "PATCH"], include_in_schema=False
     )
     async def legacy_update(key: str, request: Request) -> List[Dict[str, Any]]:
         params = query_dict(request)
         options = ListOptions.from_query(params)
-        _require_filter(options, "atualizar")
+        _require_filter(options, "update")
         changes = await json_body(request)
         return fakebase.update(key, options.filter, changes, every=options.every)
 
-    @app.get("/set/{key}", tags=["compatibilidade"], summary="Substitui os itens filtrados")
+    @app.get("/set/{key}", tags=["compatibility"], summary="Replace the filtered items")
     @app.api_route("/set/{key}", methods=["POST", "PUT"], include_in_schema=False)
     async def legacy_set(key: str, request: Request) -> List[Dict[str, Any]]:
         params = query_dict(request)
         options = ListOptions.from_query(params)
-        _require_filter(options, "substituir")
+        _require_filter(options, "replace")
         document = await json_body(request)
         return fakebase.replace(key, options.filter, document, every=options.every)
 
-    @app.get("/delete/{key}", tags=["compatibilidade"], summary="Apaga os itens filtrados")
+    @app.get("/delete/{key}", tags=["compatibility"], summary="Delete the filtered items")
     @app.api_route("/delete/{key}", methods=["DELETE"], include_in_schema=False)
     def legacy_delete(key: str, request: Request) -> List[Dict[str, Any]]:
         options = ListOptions.from_query(query_dict(request))
-        _require_filter(options, "apagar")
+        _require_filter(options, "delete")
         return fakebase.delete(key, options.filter, every=options.every)
 
     # ------------------------------------------------------------------
-    # Rotas REST
+    # REST routes
     # ------------------------------------------------------------------
-    @app.get("/{database}", tags=["crud"], summary="Lista documentos")
+    @app.get("/{database}", tags=["crud"], summary="List documents")
     def list_documents(database: str, request: Request, response: Response) -> Any:
         options = ListOptions.from_query(query_dict(request))
         documents, total = fakebase.list(database, options)
@@ -243,7 +243,7 @@ def create_app(fakebase: FakeBase) -> FastAPI:
             return envelope(documents, total, options)
         return documents
 
-    @app.post("/{database}", status_code=201, tags=["crud"], summary="Cria um documento")
+    @app.post("/{database}", status_code=201, tags=["crud"], summary="Create a document")
     async def create_document(database: str, request: Request) -> Any:
         body = await json_body(request)
         fill = coerce_bool(request.query_params.get("fill"), True)
@@ -251,69 +251,69 @@ def create_app(fakebase: FakeBase) -> FastAPI:
             return [fakebase.create(database, item, fill=fill) for item in body]
         return fakebase.create(database, body, fill=fill)
 
-    @app.get("/{database}/_count", tags=["crud"], summary="Conta documentos")
+    @app.get("/{database}/_count", tags=["crud"], summary="Count documents")
     def count_documents(database: str, request: Request) -> Dict[str, Any]:
         filter = build_filter(query_dict(request))
         return {"database": database, "count": fakebase.count(database, filter)}
 
-    @app.get("/{database}/_distinct/{field}", tags=["crud"], summary="Valores distintos de um campo")
+    @app.get("/{database}/_distinct/{field}", tags=["crud"], summary="Distinct values of a field")
     def distinct_values(database: str, field: str, request: Request) -> Dict[str, Any]:
         filter = build_filter(query_dict(request))
         values = fakebase.distinct(database, field, filter)
         return {"database": database, "field": field, "values": values, "count": len(values)}
 
-    @app.post("/{database}/_generate", tags=["crud"], summary="Gera novos documentos falsos")
+    @app.post("/{database}/_generate", tags=["crud"], summary="Generate new fake documents")
     def generate_documents(database: str, request: Request) -> Dict[str, Any]:
         count = coerce_int(request.query_params.get("count"), 1) or 1
         documents = fakebase.append(database, max(count, 1))
         return {"database": database, "created": len(documents), "value": documents}
 
-    @app.post("/{database}/_reset", tags=["crud"], summary="Regenera o banco do zero")
+    @app.post("/{database}/_reset", tags=["crud"], summary="Regenerate the database from scratch")
     def reset_database(database: str) -> Dict[str, Any]:
         report = fakebase.generate(only=[database])
         return report.as_dict()
 
-    @app.get("/{database}/{item_id}", tags=["crud"], summary="Busca um documento pelo _id")
+    @app.get("/{database}/{item_id}", tags=["crud"], summary="Get a document by _id")
     def get_document(database: str, item_id: str) -> Any:
         document = fakebase.get_by_id(database, item_id)
         if document is None:
-            raise NotFoundError(f"Documento '{item_id}' não existe em '{database}'")
+            raise NotFoundError(f"Document '{item_id}' does not exist in '{database}'")
         return document
 
-    @app.patch("/{database}/{item_id}", tags=["crud"], summary="Atualiza campos de um documento")
+    @app.patch("/{database}/{item_id}", tags=["crud"], summary="Update fields of a document")
     async def patch_document(database: str, item_id: str, request: Request) -> Any:
         changes = await json_body(request)
         updated = fakebase.update(database, {"_id": item_id}, changes)
         if not updated:
-            raise NotFoundError(f"Documento '{item_id}' não existe em '{database}'")
+            raise NotFoundError(f"Document '{item_id}' does not exist in '{database}'")
         return updated[0]
 
-    @app.put("/{database}/{item_id}", tags=["crud"], summary="Substitui um documento")
+    @app.put("/{database}/{item_id}", tags=["crud"], summary="Replace a document")
     async def put_document(database: str, item_id: str, request: Request) -> Any:
         document = await json_body(request)
         replaced = fakebase.replace(database, {"_id": item_id}, document)
         if not replaced:
-            raise NotFoundError(f"Documento '{item_id}' não existe em '{database}'")
+            raise NotFoundError(f"Document '{item_id}' does not exist in '{database}'")
         return replaced[0]
 
-    @app.delete("/{database}/{item_id}", tags=["crud"], summary="Apaga um documento")
+    @app.delete("/{database}/{item_id}", tags=["crud"], summary="Delete a document")
     def delete_document(database: str, item_id: str) -> Any:
         deleted = fakebase.delete(database, {"_id": item_id})
         if not deleted:
-            raise NotFoundError(f"Documento '{item_id}' não existe em '{database}'")
+            raise NotFoundError(f"Document '{item_id}' does not exist in '{database}'")
         return deleted[0]
 
-    @app.patch("/{database}", tags=["crud"], summary="Atualiza vários documentos por filtro")
+    @app.patch("/{database}", tags=["crud"], summary="Update several documents by filter")
     async def patch_many(database: str, request: Request) -> List[Dict[str, Any]]:
         options = ListOptions.from_query(query_dict(request))
-        _require_filter(options, "atualizar")
+        _require_filter(options, "update")
         changes = await json_body(request)
         return fakebase.update(database, options.filter, changes, every=True)
 
-    @app.delete("/{database}", tags=["crud"], summary="Apaga vários documentos por filtro")
+    @app.delete("/{database}", tags=["crud"], summary="Delete several documents by filter")
     def delete_many(database: str, request: Request) -> List[Dict[str, Any]]:
         options = ListOptions.from_query(query_dict(request))
-        _require_filter(options, "apagar")
+        _require_filter(options, "delete")
         return fakebase.delete(database, options.filter, every=True)
 
     return app
@@ -325,7 +325,7 @@ def _query_route(fakebase: FakeBase, endpoint: QueryEndpoint):
         if endpoint.method != "GET":
             body = await json_body(request)
             if not isinstance(body, dict):
-                raise QueryError("O corpo da requisição precisa ser um objeto JSON com os parâmetros")
+                raise QueryError("The request body must be a JSON object with the parameters")
         values = endpoint.bind(path=request.path_params, query=query_dict(request), body=body)
         status, payload = endpoint.execute(fakebase, values)
         return JSONResponse(status_code=status, content=jsonable_encoder(payload))
@@ -336,6 +336,6 @@ def _query_route(fakebase: FakeBase, endpoint: QueryEndpoint):
 def _require_filter(options: ListOptions, action: str) -> None:
     if not options.filter:
         raise QueryError(
-            f"Informe ao menos um filtro na query string para {action} "
-            "(por segurança, nenhum documento é afetado sem filtro)"
+            f"Provide at least one filter in the query string to {action} "
+            "(for safety, no document is affected without a filter)"
         )

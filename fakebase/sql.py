@@ -1,21 +1,21 @@
-"""Subconjunto de SQL traduzido para o dialeto do MongoDB.
+"""SQL subset translated into the MongoDB dialect.
 
-Usado pelas queries customizadas (arquivos ``.sql`` na pasta de queries).
-Suporta uma instrução por arquivo:
+Used by custom queries (``.sql`` files in the queries folder). Supports one
+statement per file:
 
-* ``SELECT * | col [AS alias], ... | COUNT(*) [AS alias] FROM banco
+* ``SELECT * | col [AS alias], ... | COUNT(*) [AS alias] FROM database
   [WHERE ...] [ORDER BY col [ASC|DESC], ...] [LIMIT n] [OFFSET n]``
-* ``INSERT INTO banco (col, ...) VALUES (valor, ...), (...)``
-* ``UPDATE banco SET col = valor, col = col + valor [WHERE ...]``
-* ``DELETE FROM banco [WHERE ...]``
+* ``INSERT INTO database (col, ...) VALUES (value, ...), (...)``
+* ``UPDATE database SET col = value, col = col + value [WHERE ...]``
+* ``DELETE FROM database [WHERE ...]``
 
-No ``WHERE``: ``= != <> < <= > >=``, ``[NOT] LIKE`` / ``ILIKE`` (``%`` e
-``_``), ``[NOT] IN (...)`` ou ``IN :lista``, ``[NOT] BETWEEN a AND b``,
-``IS [NOT] NULL``, ``AND``, ``OR``, ``NOT`` e parênteses.
+In ``WHERE``: ``= != <> < <= > >=``, ``[NOT] LIKE`` / ``ILIKE`` (``%`` and
+``_``), ``[NOT] IN (...)`` or ``IN :list``, ``[NOT] BETWEEN a AND b``,
+``IS [NOT] NULL``, ``AND``, ``OR``, ``NOT`` and parentheses.
 
-Parâmetros nomeados (``:nome``) são resolvidos antes da tradução, então
-condições que só envolvem parâmetros viram constantes. Isso permite filtros
-opcionais como ``(:nome IS NULL OR name = :nome)``.
+Named parameters (``:name``) are resolved before translation, so conditions
+that only involve parameters become constants. This allows optional filters
+such as ``(:name IS NULL OR name = :name)``.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 from .errors import QueryError
 
 # ---------------------------------------------------------------------------
-# Árvore sintática
+# Syntax tree
 # ---------------------------------------------------------------------------
 
 
@@ -109,7 +109,7 @@ class Column:
 class Assignment:
     path: str
     value: Operand
-    #: ``"set"`` (``col = valor``) ou ``"inc"`` (``col = col + valor``)
+    #: ``"set"`` (``col = value``) or ``"inc"`` (``col = col + value``)
     kind: str = "set"
     sign: int = 1
 
@@ -118,7 +118,7 @@ class Assignment:
 class Select:
     collection: str
     columns: Optional[List[Column]] = None  # None = SELECT *
-    count: Optional[str] = None  # nome da chave de COUNT(*)
+    count: Optional[str] = None  # key name for COUNT(*)
     where: Any = None
     order: List[Tuple[str, int]] = field(default_factory=list)
     limit: Optional[Operand] = None
@@ -155,12 +155,12 @@ Statement = Union[Select, Insert, Update, Delete]
 @dataclass
 class ParsedQuery:
     statement: Statement
-    #: parâmetros na ordem em que aparecem, sem repetição
+    #: parameters in order of appearance, without repetition
     params: List[str]
 
 
 # ---------------------------------------------------------------------------
-# Análise léxica
+# Lexical analysis
 # ---------------------------------------------------------------------------
 
 _TOKEN_RE = re.compile(
@@ -205,7 +205,7 @@ def tokenize(text: str) -> List[Token]:
     while pos < len(text):
         match = _TOKEN_RE.match(text, pos)
         if not match:
-            raise QueryError(f"Caractere inesperado {text[pos]!r} {_where(text, pos)}")
+            raise QueryError(f"Unexpected character {text[pos]!r} {_where(text, pos)}")
         kind = match.lastgroup
         raw = match.group()
         if kind == "string":
@@ -228,11 +228,11 @@ def tokenize(text: str) -> List[Token]:
 def _where(text: str, pos: int) -> str:
     line = text.count("\n", 0, pos) + 1
     column = pos - (text.rfind("\n", 0, pos) + 1) + 1
-    return f"(linha {line}, coluna {column})"
+    return f"(line {line}, column {column})"
 
 
 # ---------------------------------------------------------------------------
-# Análise sintática
+# Parsing
 # ---------------------------------------------------------------------------
 
 
@@ -256,8 +256,8 @@ class Parser:
 
     def error(self, message: str, token: Optional[Token] = None) -> QueryError:
         token = token or self.current
-        found = "fim da query" if token.kind == "eof" else repr(str(token.value))
-        return QueryError(f"{message}, encontrado {found} {_where(self.text, token.pos)}")
+        found = "end of query" if token.kind == "eof" else repr(str(token.value))
+        return QueryError(f"{message}, found {found} {_where(self.text, token.pos)}")
 
     def at_keyword(self, *words: str) -> bool:
         return self.current.keyword in words
@@ -269,7 +269,7 @@ class Parser:
 
     def expect_keyword(self, word: str) -> None:
         if not self.accept_keyword(word):
-            raise self.error(f"Esperado {word}")
+            raise self.error(f"Expected {word}")
 
     def at_op(self, *ops: str) -> bool:
         return self.current.kind == "op" and self.current.value in ops
@@ -281,16 +281,16 @@ class Parser:
 
     def expect_op(self, op: str) -> None:
         if not self.accept_op(op):
-            raise self.error(f"Esperado '{op}'")
+            raise self.error(f"Expected '{op}'")
 
-    def identifier(self, what: str = "um nome") -> str:
+    def identifier(self, what: str = "a name") -> str:
         token = self.current
         if token.kind == "quoted" or (token.kind == "name" and token.keyword is None):
             self.advance()
             return token.value
-        raise self.error(f"Esperado {what}")
+        raise self.error(f"Expected {what}")
 
-    # -- instruções ------------------------------------------------------
+    # -- statements ------------------------------------------------------
     def parse(self) -> ParsedQuery:
         keyword = self.current.keyword
         if keyword == "SELECT":
@@ -302,10 +302,10 @@ class Parser:
         elif keyword == "DELETE":
             statement = self.delete()
         else:
-            raise self.error("A query precisa começar com SELECT, INSERT, UPDATE ou DELETE")
+            raise self.error("The query must start with SELECT, INSERT, UPDATE or DELETE")
         self.accept_op(";")
         if self.current.kind != "eof":
-            raise self.error("Esperado o fim da query (só uma instrução por arquivo)")
+            raise self.error("Expected the end of the query (only one statement per file)")
         return ParsedQuery(statement=statement, params=list(self.params))
 
     def select(self) -> Select:
@@ -319,13 +319,13 @@ class Parser:
             self.expect_op("(")
             self.expect_op("*")
             self.expect_op(")")
-            count = self.identifier("o apelido da contagem") if self.accept_keyword("AS") else "count"
+            count = self.identifier("the count alias") if self.accept_keyword("AS") else "count"
         else:
             columns = [self.column()]
             while self.accept_op(","):
                 columns.append(self.column())
         self.expect_keyword("FROM")
-        statement = Select(collection=self.identifier("o nome do banco"), columns=columns, count=count)
+        statement = Select(collection=self.identifier("the database name"), columns=columns, count=count)
         if self.accept_keyword("WHERE"):
             statement.where = self.expression()
         if self.accept_keyword("ORDER"):
@@ -340,27 +340,27 @@ class Parser:
         return statement
 
     def column(self) -> Column:
-        path = self.identifier("o nome de uma coluna")
+        path = self.identifier("a column name")
         alias = None
         if self.accept_keyword("AS"):
-            alias = self.identifier("o apelido da coluna")
+            alias = self.identifier("the column alias")
         elif self.current.kind in ("name", "quoted") and self.current.keyword is None:
             alias = self.identifier()
         return Column(path=path, alias=alias)
 
     def order_item(self) -> Tuple[str, int]:
-        path = self.identifier("o nome de uma coluna")
+        path = self.identifier("a column name")
         direction = self.accept_keyword("ASC", "DESC")
         return path, -1 if direction == "DESC" else 1
 
     def insert(self) -> Insert:
         self.expect_keyword("INSERT")
         self.expect_keyword("INTO")
-        collection = self.identifier("o nome do banco")
+        collection = self.identifier("the database name")
         self.expect_op("(")
-        columns = [self.identifier("o nome de uma coluna")]
+        columns = [self.identifier("a column name")]
         while self.accept_op(","):
-            columns.append(self.identifier("o nome de uma coluna"))
+            columns.append(self.identifier("a column name"))
         self.expect_op(")")
         self.expect_keyword("VALUES")
         rows = [self.row(len(columns))]
@@ -377,14 +377,14 @@ class Parser:
         self.expect_op(")")
         if len(values) != size:
             raise QueryError(
-                f"VALUES com {len(values)} valor(es), mas a lista de colunas tem {size} "
+                f"VALUES has {len(values)} value(s), but the column list has {size} "
                 f"{_where(self.text, start.pos)}"
             )
         return values
 
     def update(self) -> Update:
         self.expect_keyword("UPDATE")
-        collection = self.identifier("o nome do banco")
+        collection = self.identifier("the database name")
         self.expect_keyword("SET")
         assignments = [self.assignment()]
         while self.accept_op(","):
@@ -393,7 +393,7 @@ class Parser:
         return Update(collection=collection, assignments=assignments, where=where)
 
     def assignment(self) -> Assignment:
-        path = self.identifier("o nome de uma coluna")
+        path = self.identifier("a column name")
         self.expect_op("=")
         token = self.current
         if token.kind in ("name", "quoted") and token.keyword is None:
@@ -401,7 +401,7 @@ class Parser:
             operator = self.accept_op("+", "-")
             if source != path or operator is None:
                 raise QueryError(
-                    f"Em SET só é possível usar o próprio campo para incrementar "
+                    f"In SET only the field itself can be used to increment it "
                     f"('{path} = {path} + 1') {_where(self.text, token.pos)}"
                 )
             return Assignment(path=path, value=self.value(), kind="inc", sign=1 if operator == "+" else -1)
@@ -410,11 +410,11 @@ class Parser:
     def delete(self) -> Delete:
         self.expect_keyword("DELETE")
         self.expect_keyword("FROM")
-        collection = self.identifier("o nome do banco")
+        collection = self.identifier("the database name")
         where = self.expression() if self.accept_keyword("WHERE") else None
         return Delete(collection=collection, where=where)
 
-    # -- expressões ------------------------------------------------------
+    # -- expressions ------------------------------------------------------
     def expression(self) -> Any:
         items = [self.conjunction()]
         while self.accept_keyword("OR"):
@@ -463,8 +463,8 @@ class Parser:
             self.expect_keyword("AND")
             return Between(left, low, self.operand(), negate)
         if negate:
-            raise self.error("Esperado LIKE, IN ou BETWEEN depois de NOT")
-        # ``WHERE active`` equivale a ``WHERE active = true``
+            raise self.error("Expected LIKE, IN or BETWEEN after NOT")
+        # ``WHERE active`` is the same as ``WHERE active = true``
         if isinstance(left, Field):
             return Compare(left, "=", Const(True))
         return left
@@ -488,42 +488,42 @@ class Parser:
         if self.accept_op("-"):
             number = self.current
             if number.kind != "number":
-                raise self.error("Esperado um número depois de '-'")
+                raise self.error("Expected a number after '-'")
             self.advance()
             return Const(-number.value)
         keyword = token.keyword
         if keyword in ("TRUE", "FALSE", "NULL"):
             self.advance()
             return Const({"TRUE": True, "FALSE": False, "NULL": None}[keyword])
-        raise self.error("Esperado um valor (número, 'texto', true, false, null ou :parametro)")
+        raise self.error("Expected a value (number, 'text', true, false, null or :parameter)")
 
 
 def parse(text: str) -> ParsedQuery:
-    """Interpreta o texto de uma query; levanta :class:`QueryError` se inválido."""
+    """Parse the text of a query; raise :class:`QueryError` if invalid."""
     return Parser(text).parse()
 
 
 # ---------------------------------------------------------------------------
-# Tradução para filtros do MongoDB
+# Translation into MongoDB filters
 # ---------------------------------------------------------------------------
 
-#: filtro que não casa com nenhum documento
+#: filter that matches no document
 MATCH_NOTHING: Dict[str, Any] = {"_id": {"$in": []}}
 
 _MONGO_OPS = {"=": "$eq", "!=": "$ne", "<": "$lt", "<=": "$lte", ">": "$gt", ">=": "$gte"}
 _FLIPPED = {"=": "=", "!=": "!=", "<": ">", "<=": ">=", ">": "<", ">=": "<="}
 
 def resolve(node: Operand, params: Mapping[str, Any]) -> Any:
-    """Valor de uma constante ou parâmetro."""
+    """Value of a constant or parameter."""
     if isinstance(node, Const):
         return node.value
     if isinstance(node, Param):
         return params.get(node.name)
-    raise QueryError(f"Esperado um valor, mas '{node.path}' é um campo")
+    raise QueryError(f"Expected a value, but '{node.path}' is a field")
 
 
 def build_filter(node: Any, params: Mapping[str, Any]) -> Dict[str, Any]:
-    """Traduz o ``WHERE`` (já com os parâmetros) em um filtro do MongoDB."""
+    """Translate ``WHERE`` (with the parameters bound) into a MongoDB filter."""
     if node is None:
         return {}
     result = _translate(node, params)
@@ -605,14 +605,14 @@ def _translate(node: Any, params: Mapping[str, Any]) -> Union[bool, Dict[str, An
     if isinstance(node, (Const, Param)):
         return bool(resolve(node, params))
 
-    raise QueryError(f"Expressão não suportada no WHERE: {node!r}")  # pragma: no cover
+    raise QueryError(f"Unsupported expression in WHERE: {node!r}")  # pragma: no cover
 
 
 def _compare(node: Compare, params: Mapping[str, Any]) -> Union[bool, Dict[str, Any]]:
     left, op, right = node.left, node.op, node.right
     if isinstance(left, Field) and isinstance(right, Field):
         raise QueryError(
-            f"Comparar dois campos ('{left.path}' e '{right.path}') não é suportado"
+            f"Comparing two fields ('{left.path}' and '{right.path}') is not supported"
         )
     if isinstance(right, Field):
         left, right, op = right, left, _FLIPPED[op]
@@ -628,7 +628,7 @@ def _safe_compare(left: Any, op: str, right: Any) -> bool:
         return left != right
     try:
         return {"<": left < right, "<=": left <= right, ">": left > right, ">=": left >= right}[op]
-    except TypeError:  # None ou tipos incompatíveis: como no SQL, não casa
+    except TypeError:  # None or incompatible types: as in SQL, no match
         return False
 
 
@@ -642,7 +642,7 @@ def _in_values(values: Union[List[Operand], Param], params: Mapping[str, Any]) -
 
 
 def like_to_regex(pattern: str) -> str:
-    """``'ba%'`` -> ``'^ba.*$'`` (``%`` = qualquer sequência, ``_`` = um caractere)."""
+    """``'ba%'`` -> ``'^ba.*$'`` (``%`` = any sequence, ``_`` = one character)."""
     parts = []
     for char in pattern:
         if char == "%":

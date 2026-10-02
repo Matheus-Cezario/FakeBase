@@ -1,4 +1,4 @@
-"""Geradores primitivos: números, booleanos, identificadores e estruturas."""
+"""Primitive generators: numbers, booleans, identifiers and structures."""
 
 from __future__ import annotations
 
@@ -16,14 +16,14 @@ _ALNUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 @generator(
     "number",
-    category="números",
-    doc="Número aleatório entre start e stop.",
+    category="numbers",
+    doc="Random number between start and stop.",
     params={
-        "start": "menor valor (padrão -1000)",
-        "stop": "maior valor (padrão 1000)",
-        "numberType": "float | int (padrão float)",
-        "precision": "casas decimais (padrão 10)",
-        "step": "múltiplo ao qual o valor é ajustado (opcional)",
+        "start": "lowest value (default -1000)",
+        "stop": "highest value (default 1000)",
+        "numberType": "float | int (default float)",
+        "precision": "decimal places (default 10)",
+        "step": "multiple the value is snapped to (optional)",
     },
 )
 def number(
@@ -47,9 +47,9 @@ def number(
 
 @generator(
     "integer",
-    category="números",
-    doc="Número inteiro aleatório (atalho para number/numberType=int).",
-    params={"start": "menor valor (padrão 0)", "stop": "maior valor (padrão 100)", "step": "passo"},
+    category="numbers",
+    doc="Random integer (shortcut for number/numberType=int).",
+    params={"start": "lowest value (default 0)", "stop": "highest value (default 100)", "step": "step"},
     aliases=("int",),
 )
 def integer(ctx: GenContext, start: int = 0, stop: int = 100, step: int = 1) -> int:
@@ -60,9 +60,9 @@ def integer(ctx: GenContext, start: int = 0, stop: int = 100, step: int = 1) -> 
 
 @generator(
     "boolean",
-    category="números",
-    doc="Verdadeiro ou falso.",
-    params={"chance": "probabilidade de ser verdadeiro, de 0 a 1 (padrão 0.5)"},
+    category="numbers",
+    doc="True or false.",
+    params={"chance": "probability of being true, from 0 to 1 (default 0.5)"},
     aliases=("bool",),
 )
 def boolean(ctx: GenContext, chance: float = 0.5) -> bool:
@@ -71,27 +71,27 @@ def boolean(ctx: GenContext, chance: float = 0.5) -> bool:
 
 @generator(
     "randID",
-    category="identificadores",
-    doc="Identificador aleatório.",
+    category="identifiers",
+    doc="Random identifier.",
     params={
-        "IDType": "hex | dec | alnum (padrão hex)",
-        "size": "quantidade de caracteres (padrão 16)",
-        "prefix": "texto colocado antes do id",
+        "IDType": "hex | dec | alnum (default hex)",
+        "size": "number of characters (default 16)",
+        "prefix": "text placed before the id",
     },
 )
 def rand_id(ctx: GenContext, IDType: str = "hex", size: int = 16, prefix: str = "") -> str:
     alphabets = {"hex": _HEX, "dec": _DEC, "alnum": _ALNUM}
     alphabet = alphabets.get(str(IDType).lower())
     if alphabet is None:
-        raise GeneratorError(f"IDType '{IDType}' inválido. Use hex, dec ou alnum.")
+        raise GeneratorError(f"Invalid IDType '{IDType}'. Use hex, dec or alnum.")
     return prefix + "".join(ctx.rng.choice(alphabet) for _ in range(max(size, 1)))
 
 
 @generator(
     "uuid",
-    category="identificadores",
-    doc="UUID versão 4.",
-    params={"upper": "maiúsculas (padrão false)", "dashes": "manter hífens (padrão true)"},
+    category="identifiers",
+    doc="Version 4 UUID.",
+    params={"upper": "upper case (default false)", "dashes": "keep dashes (default true)"},
 )
 def uuid4(ctx: GenContext, upper: bool = False, dashes: bool = True) -> str:
     value = str(uuid_module.UUID(int=ctx.rng.getrandbits(128), version=4))
@@ -102,8 +102,8 @@ def uuid4(ctx: GenContext, upper: bool = False, dashes: bool = True) -> str:
 
 @generator(
     "objectId",
-    category="identificadores",
-    doc="Identificador de 24 caracteres no formato usado pelo MongoDB.",
+    category="identifiers",
+    doc="24-character identifier in the format used by MongoDB.",
 )
 def object_id(ctx: GenContext) -> str:
     return "".join(ctx.rng.choice(_HEX) for _ in range(24))
@@ -111,9 +111,9 @@ def object_id(ctx: GenContext) -> str:
 
 @generator(
     "autoIncrement",
-    category="identificadores",
-    doc="Contador sequencial, reiniciado a cada geração do banco.",
-    params={"start": "valor inicial (padrão 1)", "step": "incremento (padrão 1)"},
+    category="identifiers",
+    doc="Sequential counter, restarted on every generation of the database.",
+    params={"start": "initial value (default 1)", "step": "increment (default 1)"},
     aliases=("counter",),
 )
 def auto_increment(ctx: GenContext, start: int = 1, step: int = 1) -> int:
@@ -126,9 +126,9 @@ def auto_increment(ctx: GenContext, start: int = 1, step: int = 1) -> int:
 
 @generator(
     "constant",
-    category="geral",
-    doc="Sempre devolve o mesmo valor.",
-    params={"value": "valor devolvido"},
+    category="general",
+    doc="Always returns the same value.",
+    params={"value": "returned value"},
     aliases=("const",),
 )
 def constant(ctx: GenContext, value: Any = None) -> Any:
@@ -137,11 +137,11 @@ def constant(ctx: GenContext, value: Any = None) -> Any:
 
 @generator(
     "template",
-    category="texto",
-    doc="Interpola campos já gerados da linha: '{name} <{email}>'.",
+    category="text",
+    doc="Interpolate fields already generated for the row: '{name} <{email}>'.",
     params={
-        "pattern": "texto com {campo}",
-        "default": "valor usado quando o campo não existe (padrão vazio)",
+        "pattern": "text with {field}",
+        "default": "value used when the field does not exist (default empty)",
     },
     aliases=("format",),
 )
@@ -157,9 +157,9 @@ def template(ctx: GenContext, pattern: str = "", default: str = "") -> str:
 
 @generator(
     "pattern",
-    category="texto",
-    doc="Preenche uma máscara: # vira dígito, ? vira letra.",
-    params={"mask": "máscara, por exemplo 'AB-####-??'"},
+    category="text",
+    doc="Fill a mask: # becomes a digit, ? becomes a letter.",
+    params={"mask": "mask, for example 'AB-####-??'"},
     aliases=("mask",),
 )
 def pattern(ctx: GenContext, mask: str = "###") -> str:
@@ -178,28 +178,28 @@ def pattern(ctx: GenContext, mask: str = "###") -> str:
 
 @generator(
     "object",
-    category="estruturas",
-    doc="Objeto aninhado; cada chave de 'fields' é um campo com seu gerador.",
-    params={"fields": "dicionário campo -> especificação de gerador"},
+    category="structures",
+    doc="Nested object; each key of 'fields' is a field with its generator.",
+    params={"fields": "dictionary field -> generator specification"},
     aliases=("nested",),
 )
 def nested_object(ctx: GenContext, fields: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     if not fields:
         return {}
-    if ctx.render is None:  # pragma: no cover - sempre injetado pelo Schematic
-        raise GeneratorError("Gerador 'object' precisa ser executado dentro de um schematic")
+    if ctx.render is None:  # pragma: no cover - always injected by Schematic
+        raise GeneratorError("Generator 'object' must run inside a schematic")
     return {key: ctx.render(spec) for key, spec in fields.items()}
 
 
 @generator(
     "array",
-    category="estruturas",
-    doc="Lista de valores gerados pela especificação 'of'.",
+    category="structures",
+    doc="List of values generated by the 'of' specification.",
     params={
-        "of": "especificação de gerador aplicada a cada item",
-        "min": "tamanho mínimo (padrão 1)",
-        "max": "tamanho máximo (padrão 3)",
-        "size": "tamanho fixo (ignora min/max)",
+        "of": "generator specification applied to each item",
+        "min": "minimum length (default 1)",
+        "max": "maximum length (default 3)",
+        "size": "fixed length (ignores min/max)",
     },
     aliases=("list",),
 )
@@ -211,9 +211,9 @@ def array(
     size: Optional[int] = None,
 ) -> List[Any]:
     if of is None:
-        raise GeneratorError("O parâmetro 'of' é obrigatório no gerador 'array'")
+        raise GeneratorError("Parameter 'of' is required by generator 'array'")
     if ctx.render is None:  # pragma: no cover
-        raise GeneratorError("Gerador 'array' precisa ser executado dentro de um schematic")
+        raise GeneratorError("Generator 'array' must run inside a schematic")
     if size is None:
         low, high = (min, max) if min <= max else (max, min)
         size = ctx.rng.randint(low, high)
@@ -221,5 +221,5 @@ def array(
 
 
 def builtins_max(value: int, floor: int) -> int:
-    """``max`` embutido, preservado porque o parâmetro do gerador o sombreia."""
+    """Built-in ``max``, kept because the generator parameter shadows it."""
     return value if value > floor else floor

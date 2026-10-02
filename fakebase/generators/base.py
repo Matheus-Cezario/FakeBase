@@ -1,14 +1,14 @@
-"""Infraestrutura dos geradores de valores.
+"""Value generator infrastructure.
 
-Um gerador é uma função registrada com :func:`generator` que recebe um
-:class:`GenContext` e os parâmetros declarados no *schematic*::
+A generator is a function registered with :func:`generator` that receives a
+:class:`GenContext` and the parameters declared in the *schematic*::
 
-    @generator("number", doc="Número aleatório")
+    @generator("number", doc="Random number")
     def number(ctx: GenContext, start: float = -1000.0, stop: float = 1000.0):
         ...
 
-O registro guarda a assinatura, o que permite validar parâmetros
-desconhecidos, converter tipos vindos do JSON e documentar tudo em
+The registry keeps the signature, which makes it possible to reject unknown
+parameters, convert types coming from JSON and document everything in
 ``fakebase generators``.
 """
 
@@ -27,19 +27,19 @@ Renderer = Callable[[Any], Any]
 
 @dataclass
 class GenContext:
-    """Estado compartilhado por todos os geradores durante a geração."""
+    """State shared by every generator during generation."""
 
     rng: random.Random
     faker: Any
     base_dir: Path
-    #: estado persistente por escopo (``banco.campo``) - pools, contadores...
+    #: persistent state per scope (``database.field``) - pools, counters...
     state: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    #: campos já gerados da linha atual
+    #: fields already generated for the current row
     row: Dict[str, Any] = field(default_factory=dict)
     database: str = ""
     field_name: str = ""
     row_index: int = 0
-    #: gera o valor de uma sub-especificação (usado por ``object``/``array``)
+    #: generates the value of a sub-specification (used by ``object``/``array``)
     render: Optional[Renderer] = None
 
     @property
@@ -47,11 +47,11 @@ class GenContext:
         return f"{self.database}.{self.field_name}"
 
     def local(self) -> Dict[str, Any]:
-        """Estado persistente do campo atual."""
+        """Persistent state of the current field."""
         return self.state.setdefault(self.scope, {})
 
     def shared(self) -> Dict[str, Any]:
-        """Estado compartilhado por toda a geração (cache de arquivos)."""
+        """State shared by the whole generation (file cache)."""
         return self.state.setdefault("__shared__", {})
 
     def for_field(self, field_name: str) -> "GenContext":
@@ -74,7 +74,7 @@ SizeLimit = Callable[[Mapping[str, Any], Path], Optional[int]]
 
 @dataclass
 class GeneratorSpec:
-    """Metadados de um gerador registrado."""
+    """Metadata of a registered generator."""
 
     name: str
     func: Callable[..., Any]
@@ -82,7 +82,7 @@ class GeneratorSpec:
     params: Dict[str, str] = field(default_factory=dict)
     aliases: Sequence[str] = ()
     size_limit: Optional[SizeLimit] = None
-    category: str = "geral"
+    category: str = "general"
 
     @property
     def signature(self) -> inspect.Signature:
@@ -97,9 +97,9 @@ class GeneratorSpec:
             return self.func(ctx, **kwargs)
         except GeneratorError:
             raise
-        except Exception as exc:  # pragma: no cover - proteção genérica
+        except Exception as exc:  # pragma: no cover - generic safeguard
             raise GeneratorError(
-                f"Falha no gerador '{self.name}' (campo '{ctx.field_name}'): {exc}"
+                f"Generator '{self.name}' failed (field '{ctx.field_name}'): {exc}"
             ) from exc
 
     def _prepare(self, params: Mapping[str, Any]) -> Dict[str, Any]:
@@ -112,8 +112,8 @@ class GeneratorSpec:
         for key, value in params.items():
             if key not in accepted and not has_var_kw:
                 raise GeneratorError(
-                    f"Parâmetro '{key}' não existe no gerador '{self.name}'. "
-                    f"Disponíveis: {', '.join(sorted(accepted)) or 'nenhum'}"
+                    f"Parameter '{key}' does not exist in generator '{self.name}'. "
+                    f"Available: {', '.join(sorted(accepted)) or 'none'}"
                 )
             parameter = signature.parameters.get(key)
             kwargs[key] = _convert(value, parameter.annotation if parameter else None, self.name, key)
@@ -130,9 +130,9 @@ def generator(
     params: Optional[Dict[str, str]] = None,
     aliases: Sequence[str] = (),
     size_limit: Optional[SizeLimit] = None,
-    category: str = "geral",
+    category: str = "general",
 ):
-    """Registra uma função como gerador de valores."""
+    """Register a function as a value generator."""
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         summary = doc.strip() if doc else _first_line(func.__doc__)
@@ -169,7 +169,7 @@ def exists(name: Any) -> bool:
 
 
 def available() -> List[GeneratorSpec]:
-    """Geradores registrados, sem repetir os apelidos."""
+    """Registered generators, without repeating aliases."""
     seen: Dict[int, GeneratorSpec] = {}
     for spec in REGISTRY.values():
         seen.setdefault(id(spec), spec)
@@ -177,7 +177,7 @@ def available() -> List[GeneratorSpec]:
 
 
 # ---------------------------------------------------------------------------
-# Conversão de parâmetros vindos do JSON
+# Conversion of parameters coming from JSON
 # ---------------------------------------------------------------------------
 
 _TRUE = {"1", "true", "yes", "on", "y"}
@@ -211,25 +211,25 @@ def _convert(value: Any, annotation: Any, generator_name: str, param: str) -> An
             return float(value)
     except (TypeError, ValueError):
         raise GeneratorError(
-            f"Parâmetro '{param}' do gerador '{generator_name}' recebeu {value!r}, "
-            f"incompatível com {text_annotation}"
+            f"Parameter '{param}' of generator '{generator_name}' got {value!r}, "
+            f"incompatible with {text_annotation}"
         )
     return value
 
 
 # ---------------------------------------------------------------------------
-# Helpers reutilizados por vários geradores
+# Helpers shared by several generators
 # ---------------------------------------------------------------------------
 
 
 def load_data(ctx: GenContext, data: Any, *, param: str = "data") -> List[Any]:
-    """Normaliza o parâmetro ``data``.
+    """Normalize the ``data`` parameter.
 
-    Aceita uma lista literal, o caminho de um arquivo texto (um valor por
-    linha) ou o resultado já resolvido de uma referência entre bancos.
+    Accepts a literal list, the path of a text file (one value per line) or
+    the already resolved result of a cross-database reference.
     """
     if data is None:
-        raise GeneratorError(f"O parâmetro '{param}' é obrigatório")
+        raise GeneratorError(f"Parameter '{param}' is required")
     if isinstance(data, (list, tuple)):
         return list(data)
     if isinstance(data, dict):
@@ -240,13 +240,13 @@ def load_data(ctx: GenContext, data: Any, *, param: str = "data") -> List[Any]:
 
 
 def read_lines(ctx: GenContext, path: str) -> List[str]:
-    """Lê (com cache) um arquivo texto como lista de valores."""
+    """Read (with cache) a text file as a list of values."""
     cache: Dict[str, List[str]] = ctx.shared().setdefault("files", {})
     if path in cache:
         return list(cache[path])
     resolved = resolve_path(ctx.base_dir, path)
     if not resolved.is_file():
-        raise GeneratorError(f"Arquivo de dados não encontrado: {path}")
+        raise GeneratorError(f"Data file not found: {path}")
     lines = [line.strip() for line in resolved.read_text(encoding="utf-8").splitlines()]
     values = [line for line in lines if line]
     cache[path] = values
@@ -264,11 +264,11 @@ def resolve_path(base_dir: Path, path: str) -> Path:
 
 
 def data_length(data: Any, base_dir: Path) -> Optional[int]:
-    """Tamanho de ``data`` sem precisar de um contexto (usado nos limites)."""
+    """Length of ``data`` without needing a context (used for limits)."""
     if isinstance(data, (list, tuple)):
         return len(data)
     if isinstance(data, str):
-        if data.startswith("@"):  # referência entre bancos: só se sabe em runtime
+        if data.startswith("@"):  # cross-database reference: only known at runtime
             return None
         resolved = resolve_path(base_dir, data)
         if resolved.is_file():
@@ -279,7 +279,7 @@ def data_length(data: Any, base_dir: Path) -> Optional[int]:
 
 
 def no_repeat_limit(params: Mapping[str, Any], base_dir: Path) -> Optional[int]:
-    """Limite de linhas quando o gerador não pode repetir valores."""
+    """Row limit when the generator cannot repeat values."""
     repeat = params.get("repeat", True)
     if isinstance(repeat, str):
         repeat = repeat.strip().lower() not in _FALSE
@@ -289,11 +289,11 @@ def no_repeat_limit(params: Mapping[str, Any], base_dir: Path) -> Optional[int]:
 
 
 def pick_pool(ctx: GenContext, data: Iterable[Any]) -> List[Any]:
-    """Pool persistente por campo, usado quando ``repeat`` é ``false``.
+    """Persistent pool per field, used when ``repeat`` is ``false``.
 
-    Se o estado trouxer um conjunto ``exclude`` (valores já gravados no
-    banco), eles ficam de fora — é o que mantém a promessa de "sem
-    repetição" quando novos documentos são acrescentados depois.
+    If the state carries an ``exclude`` set (values already stored in the
+    database), they are left out — this keeps the "no repetition" promise
+    when new documents are appended later.
     """
     local = ctx.local()
     if "pool" not in local:
@@ -305,5 +305,5 @@ def pick_pool(ctx: GenContext, data: Iterable[Any]) -> List[Any]:
 def _is_excluded(value: Any, excluded: Any) -> bool:
     try:
         return value in excluded
-    except TypeError:  # valores não hasheáveis (listas, dicionários)
+    except TypeError:  # unhashable values (lists, dicts)
         return False

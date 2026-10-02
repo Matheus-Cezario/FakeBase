@@ -1,24 +1,24 @@
-"""Queries customizadas: arquivos ``.sql`` que viram endpoints da API.
+"""Custom queries: ``.sql`` files that become API endpoints.
 
-Cada arquivo dentro da pasta de queries (``Settings.queriesPath``) vira uma
-rota; as subpastas entram na URL::
+Every file inside the queries folder (``Settings.queriesPath``) becomes a
+route; subfolders become part of the URL::
 
     queries/
-      relatorios/caros.sql        GET    /queries/relatorios/caros
+      reports/expensive.sql       GET    /queries/reports/expensive
       users/index.sql             GET    /queries/users
       users/index.create.sql      POST   /queries/users
       users/[id].sql              GET    /queries/users/{id}
 
-A primeira linha do arquivo é um comentário com o método HTTP (``-- GET``,
-``-- POST``, ``-- PUT`` ou ``-- DELETE``). Os demais comentários do topo
-viram a descrição da rota no Swagger, exceto as diretivas:
+The first line of the file is a comment with the HTTP method (``-- GET``,
+``-- POST``, ``-- PUT`` or ``-- DELETE``). The other comments at the top
+become the route description in Swagger, except for the directives:
 
-* ``-- @param nome [tipo] [= padrão]`` declara tipo e/ou valor padrão;
-* ``-- @one`` devolve só o primeiro documento (ou 404) em vez de uma lista;
-* ``-- @fill false`` faz o ``INSERT`` gravar só as colunas informadas.
+* ``-- @param name [type] [= default]`` declares a type and/or default value;
+* ``-- @one`` returns only the first document (or 404) instead of a list;
+* ``-- @fill false`` makes ``INSERT`` store only the given columns.
 
-Os parâmetros (``:nome``) vêm, em ordem de prioridade, do caminho da URL,
-do corpo JSON e da query string.
+Parameters (``:name``) come, in order of priority, from the URL path, the
+JSON body and the query string.
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ _MISSING = object()
 
 @dataclass
 class ParamSpec:
-    """Parâmetro declarado com ``-- @param``."""
+    """Parameter declared with ``-- @param``."""
 
     name: str
     type: str = "auto"
@@ -70,7 +70,7 @@ class ParamSpec:
 
 @dataclass
 class QueryEndpoint:
-    """Uma query carregada de arquivo, pronta para virar rota."""
+    """A query loaded from a file, ready to become a route."""
 
     file: Path
     relative: str
@@ -90,7 +90,7 @@ class QueryEndpoint:
 
     @property
     def params(self) -> List[ParamSpec]:
-        """Todos os parâmetros usados pela query, na ordem em que aparecem."""
+        """Every parameter used by the query, in order of appearance."""
         names = [*self.path_params]
         names += [name for name in self.query.params if name not in names]
         return [self.declared.get(name, ParamSpec(name)) for name in names]
@@ -102,10 +102,10 @@ class QueryEndpoint:
         query: Mapping[str, Any] = None,
         body: Mapping[str, Any] = None,
     ) -> Dict[str, Any]:
-        """Junta e converte os valores dos parâmetros vindos da requisição.
+        """Collect and convert the parameter values coming from the request.
 
-        Valores da URL (caminho e query string) chegam como texto e passam
-        pela conversão; os do corpo JSON já vêm tipados.
+        URL values (path and query string) arrive as text and go through
+        conversion; JSON body values are already typed.
         """
         values: Dict[str, Any] = {}
         missing: List[str] = []
@@ -124,12 +124,12 @@ class QueryEndpoint:
             values[spec.name] = convert(raw, spec.type, spec.name, from_text=from_text)
         if missing:
             raise QueryError(
-                f"Parâmetro(s) obrigatório(s) ausente(s): {', '.join(missing)}"
+                f"Missing required parameter(s): {', '.join(missing)}"
             )
         return values
 
     def execute(self, fakebase, params: Mapping[str, Any]) -> Tuple[int, Any]:
-        """Roda a query e devolve ``(status HTTP, corpo da resposta)``."""
+        """Run the query and return ``(HTTP status, response body)``."""
         statement = self.query.statement
         name = statement.collection
 
@@ -149,7 +149,7 @@ class QueryEndpoint:
                 documents = [_shape(document, statement.columns) for document in documents]
             if self.one:
                 if not documents:
-                    raise NotFoundError(f"Nenhum documento encontrado em '{name}'")
+                    raise NotFoundError(f"No document found in '{name}'")
                 return 200, documents[0]
             return 200, documents
 
@@ -171,7 +171,7 @@ class QueryEndpoint:
                 value = resolve(item.value, params)
                 if item.kind == "inc":
                     if not isinstance(value, (int, float)) or isinstance(value, bool):
-                        raise QueryError(f"Incremento de '{item.path}' precisa ser um número")
+                        raise QueryError(f"Increment of '{item.path}' must be a number")
                     changes.setdefault("$inc", {})[item.path] = value * item.sign
                 else:
                     changes.setdefault("$set", {})[item.path] = value
@@ -184,13 +184,13 @@ class QueryEndpoint:
     def _result(self, name: str, key: str, documents: List[Dict[str, Any]]) -> Tuple[int, Any]:
         if self.one:
             if not documents:
-                raise NotFoundError(f"Nenhum documento encontrado em '{name}'")
+                raise NotFoundError(f"No document found in '{name}'")
             return 200, documents[0]
         return 200, {"database": name, key: len(documents), "value": documents}
 
     # ------------------------------------------------------------------
     def openapi(self) -> Dict[str, Any]:
-        """Parâmetros e corpo da rota para a documentação do Swagger."""
+        """Route parameters and body for the Swagger documentation."""
         parameters: List[Dict[str, Any]] = []
         body: Dict[str, Any] = {}
         required_body: List[str] = []
@@ -242,17 +242,17 @@ class QueryEndpoint:
 
 
 # ---------------------------------------------------------------------------
-# Carregamento
+# Loading
 # ---------------------------------------------------------------------------
 
 
 def load_queries(
     folder: Path, *, prefix: str = "/queries", databases: Optional[Sequence[str]] = None
 ) -> List[QueryEndpoint]:
-    """Lê todos os ``.sql`` da pasta (recursivamente) e monta os endpoints.
+    """Read every ``.sql`` in the folder (recursively) and build the endpoints.
 
-    Uma pasta inexistente simplesmente não gera rotas. Qualquer arquivo
-    inválido levanta :class:`ConfigError` dizendo qual é e o que está errado.
+    A missing folder simply yields no routes. Any invalid file raises
+    :class:`ConfigError` saying which one it is and what is wrong.
     """
     folder = Path(folder)
     if not folder.is_dir():
@@ -263,18 +263,18 @@ def load_queries(
         endpoint = load_query(file, folder, prefix=prefix)
         if databases is not None and endpoint.collection not in databases:
             raise ConfigError(
-                f"{endpoint.relative}: o banco '{endpoint.collection}' não existe. "
-                f"Disponíveis: {', '.join(databases)}"
+                f"{endpoint.relative}: database '{endpoint.collection}' does not exist. "
+                f"Available: {', '.join(databases)}"
             )
         key = (endpoint.method, _route_shape(endpoint.route))
         if key in seen:
             raise ConfigError(
-                f"{endpoint.relative} e {seen[key].relative} atendem a mesma rota: "
+                f"{endpoint.relative} and {seen[key].relative} serve the same route: "
                 f"{endpoint.method} {endpoint.route}"
             )
         seen[key] = endpoint
         endpoints.append(endpoint)
-    # rotas fixas antes das com parâmetro, para '/users/ativos' vencer '/users/{id}'
+    # fixed routes before parameterized ones, so '/users/active' wins over '/users/{id}'
     endpoints.sort(key=lambda e: (_route_shape(e.route).count("{}"), e.route, e.method))
     return endpoints
 
@@ -284,12 +284,12 @@ def load_query(file: Path, root: Path, *, prefix: str = "/queries") -> QueryEndp
     try:
         text = file.read_text(encoding="utf-8-sig")
     except OSError as exc:
-        raise ConfigError(f"{relative}: não foi possível ler o arquivo ({exc})") from exc
+        raise ConfigError(f"{relative}: could not read the file ({exc})") from exc
 
     header = _header_lines(text)
     if not header or header[0].split()[0].upper() not in METHODS:
         raise ConfigError(
-            f"{relative}: a primeira linha precisa ser um comentário com o método HTTP "
+            f"{relative}: the first line must be a comment with the HTTP method "
             f"(-- {', -- '.join(METHODS)})"
         )
     first = header[0].split(None, 1)
@@ -325,7 +325,7 @@ def load_query(file: Path, root: Path, *, prefix: str = "/queries") -> QueryEndp
     unknown = set(endpoint.declared) - {spec.name for spec in endpoint.params}
     if unknown:
         raise ConfigError(
-            f"{relative}: @param declarado mas não usado na query: {', '.join(sorted(unknown))}"
+            f"{relative}: @param declared but not used in the query: {', '.join(sorted(unknown))}"
         )
     return endpoint
 
@@ -333,9 +333,9 @@ def load_query(file: Path, root: Path, *, prefix: str = "/queries") -> QueryEndp
 def route_for(relative: str, prefix: str = "/queries") -> Tuple[str, List[str]]:
     """``'users/[id].sql'`` -> ``('/queries/users/{id}', ['id'])``.
 
-    O que vem depois do primeiro ponto do nome do arquivo é ignorado, o que
-    permite ``index.sql`` e ``index.create.sql`` na mesma URL com métodos
-    diferentes; ``index`` representa a própria pasta.
+    Anything after the first dot of the file name is ignored, which allows
+    ``index.sql`` and ``index.create.sql`` on the same URL with different
+    methods; ``index`` stands for the folder itself.
     """
     parts = relative.split("/")
     parts[-1] = parts[-1].split(".", 1)[0]
@@ -348,15 +348,15 @@ def route_for(relative: str, prefix: str = "/queries") -> Tuple[str, List[str]]:
         if match:
             name = match.group(1)
             if name in path_params:
-                raise ConfigError(f"{relative}: parâmetro de caminho '{name}' repetido")
+                raise ConfigError(f"{relative}: repeated path parameter '{name}'")
             path_params.append(name)
             segments.append("{" + name + "}")
         elif _SEGMENT_RE.match(part):
             segments.append(part)
         else:
             raise ConfigError(
-                f"{relative}: '{part}' não pode virar parte da URL "
-                "(use letras, números, '-', '_' ou [parametro])"
+                f"{relative}: '{part}' cannot become part of the URL "
+                "(use letters, digits, '-', '_' or [parameter])"
             )
     base = "/" + prefix.strip("/") if prefix.strip("/") else ""
     route = base + ("/" + "/".join(segments) if segments else "")
@@ -368,7 +368,7 @@ def _route_shape(route: str) -> str:
 
 
 def _header_lines(text: str) -> List[str]:
-    """Comentários ``--`` do topo do arquivo, sem o prefixo."""
+    """``--`` comments at the top of the file, without the prefix."""
     lines: List[str] = []
     for raw in text.splitlines():
         line = raw.strip()
@@ -393,14 +393,14 @@ def _apply_directive(relative: str, name: str, value: str, target: Dict[str, Any
         match = _PARAM_RE.match(value)
         if not match:
             raise ConfigError(
-                f"{relative}: @param inválido {value!r} (esperado '@param nome [tipo] [= padrão]')"
+                f"{relative}: invalid @param {value!r} (expected '@param name [type] [= default]')"
             )
         param, kind, default = match.groups()
         kind = (kind or "auto").lower()
         if kind not in PARAM_TYPES:
             raise ConfigError(
-                f"{relative}: tipo '{kind}' do parâmetro '{param}' é inválido. "
-                f"Aceitos: {', '.join(PARAM_TYPES)}"
+                f"{relative}: type '{kind}' of parameter '{param}' is invalid. "
+                f"Accepted: {', '.join(PARAM_TYPES)}"
             )
         spec = ParamSpec(param, kind)
         if default is not None:
@@ -408,17 +408,17 @@ def _apply_directive(relative: str, name: str, value: str, target: Dict[str, Any
         target["declared"][param] = spec
     else:
         raise ConfigError(
-            f"{relative}: diretiva '@{name}' desconhecida (aceitas: @param, @one, @fill)"
+            f"{relative}: unknown directive '@{name}' (accepted: @param, @one, @fill)"
         )
 
 
 # ---------------------------------------------------------------------------
-# Conversão de valores
+# Value conversion
 # ---------------------------------------------------------------------------
 
 
 def convert(value: Any, kind: str, name: str, *, from_text: bool) -> Any:
-    """Converte o valor de um parâmetro para o tipo declarado."""
+    """Convert a parameter value to the declared type."""
     if kind == "list":
         if isinstance(value, (list, tuple)):
             return [coerce(item) if from_text else item for item in value]
@@ -426,7 +426,7 @@ def convert(value: Any, kind: str, name: str, *, from_text: bool) -> Any:
             return _split_list(value)
         return [value]
     if isinstance(value, list) and from_text:
-        # chave repetida na query string (?id=1&id=2)
+        # repeated key in the query string (?id=1&id=2)
         return [convert(item, kind, name, from_text=True) for item in value]
     if value is None:
         return None
@@ -460,7 +460,7 @@ def convert(value: Any, kind: str, name: str, *, from_text: bool) -> Any:
             return json.loads(value) if isinstance(value, str) else value
     except (TypeError, ValueError):
         pass
-    raise QueryError(f"Parâmetro '{name}': {value!r} não é um valor do tipo {kind}")
+    raise QueryError(f"Parameter '{name}': {value!r} is not a value of type {kind}")
 
 
 def _int_value(node, params: Mapping[str, Any], clause: str) -> Optional[int]:
@@ -473,14 +473,14 @@ def _int_value(node, params: Mapping[str, Any], clause: str) -> Optional[int]:
         try:
             value = int(str(value))
         except ValueError:
-            raise QueryError(f"{clause} precisa ser um número inteiro, recebeu {value!r}")
+            raise QueryError(f"{clause} must be an integer, got {value!r}")
     if value < 0:
-        raise QueryError(f"{clause} não pode ser negativo")
+        raise QueryError(f"{clause} cannot be negative")
     return value
 
 
 # ---------------------------------------------------------------------------
-# Projeção das colunas do SELECT
+# Projection of the SELECT columns
 # ---------------------------------------------------------------------------
 
 
@@ -494,7 +494,7 @@ def _projection(statement: Select) -> Optional[Dict[str, int]]:
 
 
 def _shape(document: Mapping[str, Any], columns) -> Dict[str, Any]:
-    """Monta o documento na ordem das colunas, aplicando os apelidos (AS)."""
+    """Build the document in column order, applying the aliases (AS)."""
     shaped: Dict[str, Any] = {}
     for column in columns:
         value = _get_path(document, column.path)

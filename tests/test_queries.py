@@ -9,44 +9,44 @@ from fakebase.queries import load_queries, route_for
 from conftest import build_config
 
 QUERIES = {
-    "produtos/baratos.sql": """
-        -- GET Produtos abaixo de um preço
+    "products/cheap.sql": """
+        -- GET Products below a price
         -- @param max number = 50
-        -- @param limite int = 100
-        SELECT name, price AS preco FROM products
+        -- @param limit int = 100
+        SELECT name, price AS cost FROM products
         WHERE price < :max
         ORDER BY price
-        LIMIT :limite
+        LIMIT :limit
     """,
-    "produtos/index.sql": """
+    "products/index.sql": """
         -- GET
-        -- @param nome = null
-        SELECT * FROM products WHERE (:nome IS NULL OR name LIKE :nome)
+        -- @param name = null
+        SELECT * FROM products WHERE (:name IS NULL OR name LIKE :name)
     """,
-    "produtos/index.create.sql": """
+    "products/index.create.sql": """
         -- POST
         INSERT INTO products (name, price) VALUES (:name, :price)
     """,
-    "produtos/[id].sql": """
+    "products/[id].sql": """
         -- GET
         -- @param id string
         -- @one
         SELECT * FROM products WHERE _id = :id
     """,
-    "produtos/[id].stock.sql": """
+    "products/[id].stock.sql": """
         -- PUT
         -- @param id string
         -- @one
-        UPDATE products SET stock = stock - :qtd WHERE _id = :id
+        UPDATE products SET stock = stock - :qty WHERE _id = :id
     """,
-    "produtos/[id].delete.sql": """
+    "products/[id].delete.sql": """
         -- DELETE
         -- @param id string
         DELETE FROM products WHERE _id = :id
     """,
-    "relatorios/usuarios/total.sql": """
+    "reports/users/total.sql": """
         -- GET
-        SELECT COUNT(*) AS total FROM users WHERE age >= :idade
+        SELECT COUNT(*) AS total FROM users WHERE age >= :age
     """,
 }
 
@@ -74,106 +74,106 @@ def client(tmp_path):
     instance.close()
 
 
-def test_rotas_seguem_as_pastas():
+def test_routes_follow_the_folders():
     assert route_for("a/b/c.sql") == ("/queries/a/b/c", [])
     assert route_for("users/index.sql") == ("/queries/users", [])
     assert route_for("users/[id].sql", prefix="") == ("/users/{id}", ["id"])
     assert route_for("index.sql", prefix="/") == ("/", [])
 
 
-def test_get_com_parametros_padrao_e_apelidos(client):
-    documentos = client.get("/queries/produtos/baratos").json()
-    assert documentos and all(set(d) == {"name", "preco"} for d in documentos)
-    assert all(d["preco"] < 50 for d in documentos)
-    assert [d["preco"] for d in documentos] == sorted(d["preco"] for d in documentos)
+def test_get_with_default_params_and_aliases(client):
+    documents = client.get("/queries/products/cheap").json()
+    assert documents and all(set(d) == {"name", "cost"} for d in documents)
+    assert all(d["cost"] < 50 for d in documents)
+    assert [d["cost"] for d in documents] == sorted(d["cost"] for d in documents)
 
-    poucos = client.get("/queries/produtos/baratos", params={"max": 90, "limite": 2}).json()
-    assert len(poucos) == 2
-
-
-def test_filtro_opcional(client):
-    todos = client.get("/queries/produtos").json()
-    assert len(todos) == 10
-    nome = todos[0]["name"]
-    filtrados = client.get("/queries/produtos", params={"nome": nome}).json()
-    assert filtrados and all(d["name"].lower() == nome.lower() for d in filtrados)
+    few = client.get("/queries/products/cheap", params={"max": 90, "limit": 2}).json()
+    assert len(few) == 2
 
 
-def test_post_insere_e_get_por_id(client):
-    response = client.post("/queries/produtos", json={"name": "Novo", "price": 12.5})
+def test_optional_filter(client):
+    everything = client.get("/queries/products").json()
+    assert len(everything) == 10
+    name = everything[0]["name"]
+    filtered = client.get("/queries/products", params={"name": name}).json()
+    assert filtered and all(d["name"].lower() == name.lower() for d in filtered)
+
+
+def test_post_inserts_and_get_by_id(client):
+    response = client.post("/queries/products", json={"name": "New", "price": 12.5})
     assert response.status_code == 201
-    criado = response.json()["value"][0]
-    assert criado["name"] == "Novo" and "stock" in criado  # campos ausentes são gerados
+    created = response.json()["value"][0]
+    assert created["name"] == "New" and "stock" in created  # missing fields are generated
 
-    lido = client.get(f"/queries/produtos/{criado['_id']}").json()
-    assert lido["_id"] == criado["_id"] and lido["price"] == 12.5
-
-
-def test_put_incrementa_e_delete_apaga(client):
-    produto = client.get("/products", params={"limit": 1}).json()[0]
-    atualizado = client.put(f"/queries/produtos/{produto['_id']}", json={"qtd": 1}).json()
-    assert atualizado["stock"] == produto["stock"] - 1
-
-    apagado = client.delete(f"/queries/produtos/{produto['_id']}").json()
-    assert apagado["deleted"] == 1
-    assert client.get(f"/queries/produtos/{produto['_id']}").status_code == 404
+    fetched = client.get(f"/queries/products/{created['_id']}").json()
+    assert fetched["_id"] == created["_id"] and fetched["price"] == 12.5
 
 
-def test_count_em_subpasta(client):
-    body = client.get("/queries/relatorios/usuarios/total", params={"idade": 0}).json()
+def test_put_increments_and_delete_removes(client):
+    product = client.get("/products", params={"limit": 1}).json()[0]
+    updated = client.put(f"/queries/products/{product['_id']}", json={"qty": 1}).json()
+    assert updated["stock"] == product["stock"] - 1
+
+    deleted = client.delete(f"/queries/products/{product['_id']}").json()
+    assert deleted["deleted"] == 1
+    assert client.get(f"/queries/products/{product['_id']}").status_code == 404
+
+
+def test_count_in_subfolder(client):
+    body = client.get("/queries/reports/users/total", params={"age": 0}).json()
     assert body == {"total": 6}
 
 
-def test_parametro_obrigatorio_e_tipo_invalido(client):
-    response = client.get("/queries/relatorios/usuarios/total")
-    assert response.status_code == 400 and "idade" in response.json()["error"]
-    response = client.get("/queries/produtos/baratos", params={"limite": "muitos"})
+def test_required_param_and_invalid_type(client):
+    response = client.get("/queries/reports/users/total")
+    assert response.status_code == 400 and "age" in response.json()["error"]
+    response = client.get("/queries/products/cheap", params={"limit": "lots"})
     assert response.status_code == 400
 
 
-def test_queries_aparecem_no_indice_e_no_swagger(client):
-    assert {"method": "POST", "url": "/queries/produtos"} in client.get("/").json()["queries"]
-    descritas = {(q["method"], q["url"]) for q in client.get("/_queries").json()}
-    assert ("DELETE", "/queries/produtos/{id}") in descritas
-    caminhos = client.get("/openapi.json").json()["paths"]
-    assert "/queries/produtos/{id}" in caminhos
-    parametros = caminhos["/queries/produtos/baratos"]["get"]["parameters"]
-    assert {p["name"] for p in parametros} == {"max", "limite"}
+def test_queries_show_up_in_index_and_swagger(client):
+    assert {"method": "POST", "url": "/queries/products"} in client.get("/").json()["queries"]
+    described = {(q["method"], q["url"]) for q in client.get("/_queries").json()}
+    assert ("DELETE", "/queries/products/{id}") in described
+    paths = client.get("/openapi.json").json()["paths"]
+    assert "/queries/products/{id}" in paths
+    parameters = paths["/queries/products/cheap"]["get"]["parameters"]
+    assert {p["name"] for p in parameters} == {"max", "limit"}
 
 
-def test_rotas_fixas_antes_das_com_parametro(tmp_path):
+def test_fixed_routes_before_parameterized_ones(tmp_path):
     folder = write_queries(
         tmp_path,
         {
             "users/[id].sql": "-- GET\nSELECT * FROM users WHERE _id = :id",
-            "users/ativos.sql": "-- GET\nSELECT * FROM users WHERE active",
+            "users/active.sql": "-- GET\nSELECT * FROM users WHERE active",
         },
     )
-    rotas = [e.route for e in load_queries(folder, databases=["users"])]
-    assert rotas == ["/queries/users/ativos", "/queries/users/{id}"]
+    routes = [e.route for e in load_queries(folder, databases=["users"])]
+    assert routes == ["/queries/users/active", "/queries/users/{id}"]
 
 
 @pytest.mark.parametrize(
-    "arquivos, trecho",
+    "files, fragment",
     [
-        ({"a.sql": "SELECT * FROM users"}, "método HTTP"),
-        ({"a.sql": "-- PATCH\nSELECT * FROM users"}, "método HTTP"),
-        ({"a.sql": "-- GET\nSELECT * FROM nada"}, "'nada' não existe"),
+        ({"a.sql": "SELECT * FROM users"}, "HTTP method"),
+        ({"a.sql": "-- PATCH\nSELECT * FROM users"}, "HTTP method"),
+        ({"a.sql": "-- GET\nSELECT * FROM nothing"}, "'nothing' does not exist"),
         ({"a.sql": "-- GET\nSELECT * FROM users WHERE"}, "a.sql"),
-        ({"a.sql": "-- GET\n-- @param x\nSELECT * FROM users"}, "não usado"),
-        ({"a.sql": "-- GET\n-- @param x data\nSELECT * FROM users WHERE a = :x"}, "tipo 'data'"),
+        ({"a.sql": "-- GET\n-- @param x\nSELECT * FROM users"}, "not used"),
+        ({"a.sql": "-- GET\n-- @param x date\nSELECT * FROM users WHERE a = :x"}, "type 'date'"),
         (
-            {"a.sql": "-- GET\nSELECT * FROM users", "a.outra.sql": "-- GET\nSELECT * FROM users"},
-            "mesma rota",
+            {"a.sql": "-- GET\nSELECT * FROM users", "a.other.sql": "-- GET\nSELECT * FROM users"},
+            "same route",
         ),
-        ({"com espaço.sql": "-- GET\nSELECT * FROM users"}, "não pode virar parte da URL"),
+        ({"with space.sql": "-- GET\nSELECT * FROM users"}, "cannot become part of the URL"),
     ],
 )
-def test_erros_de_carregamento(tmp_path, arquivos, trecho):
-    folder = write_queries(tmp_path, arquivos)
-    with pytest.raises(ConfigError, match=trecho):
+def test_loading_errors(tmp_path, files, fragment):
+    folder = write_queries(tmp_path, files)
+    with pytest.raises(ConfigError, match=fragment):
         load_queries(folder, databases=["users"])
 
 
-def test_pasta_inexistente_nao_gera_rotas(tmp_path):
-    assert load_queries(tmp_path / "nada") == []
+def test_missing_folder_yields_no_routes(tmp_path):
+    assert load_queries(tmp_path / "nothing") == []
